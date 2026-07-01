@@ -17,6 +17,12 @@ export function normalizeDownloadDir(input: string, home: string = os.homedir())
   const expanded = expandHome(input, home);
   if (!expanded) return "";
   const normalized = path.normalize(expanded);
-  // Remove trailing slashes for consistent comparison (except for root "/")
-  return normalized === "/" ? normalized : normalized.replace(/\/$/, "");
+  // Remove trailing separators for consistent comparison (except for root paths).
+  // On POSIX, "/" is root; on Windows, "C:\" is root. Use path.parse to detect.
+  const parsed = path.parse(normalized);
+  if (parsed.root === normalized) {
+    return normalized; // Root path; preserve as-is
+  }
+  // Strip trailing separator (matches both "/" and "\")
+  return normalized.replace(/[/\\]$/, "");
 }

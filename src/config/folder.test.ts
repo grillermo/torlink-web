@@ -37,4 +37,23 @@ describe("normalizeDownloadDir", () => {
       path.normalize(path.join(HOME, "Downloads", "torlink")),
     );
   });
+
+  it("strips trailing separators from paths for consistent deduplication", () => {
+    const pathNoTrailing = path.join(HOME, "Downloads", "torlink");
+    const pathWithTrailing = pathNoTrailing + path.sep;
+
+    const result1 = normalizeDownloadDir(pathNoTrailing, HOME);
+    const result2 = normalizeDownloadDir(pathWithTrailing, HOME);
+
+    expect(result1).toBe(result2);
+  });
+
+  it("preserves the root directory without stripping the separator", () => {
+    // Root paths (e.g., "/" on POSIX, "C:\" on Windows) should not be modified.
+    // Verify by checking that the parsed root equals the result.
+    const root = path.sep === "/" ? "/" : "C:\\";
+    const result = normalizeDownloadDir(root, HOME);
+    const parsed = path.parse(result);
+    expect(parsed.root).toBe(result);
+  });
 });
