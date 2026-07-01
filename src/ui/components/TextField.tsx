@@ -5,6 +5,9 @@ export interface TextFieldProps {
   isDisabled?: boolean;
   defaultValue?: string;
   placeholder?: string;
+  // Optional transform applied to inserted text (e.g. strip non-digits) so a
+  // field can constrain what it accepts. Runs per keystroke on the raw input.
+  filter?: (input: string) => string;
   onChange?: (value: string) => void;
   onSubmit?: (value: string) => void;
   onExitDown?: () => void;
@@ -48,6 +51,7 @@ export function TextField({
   isDisabled = false,
   defaultValue = "",
   placeholder = "",
+  filter,
   onChange,
   onSubmit,
   onExitDown,
@@ -114,7 +118,8 @@ export function TextField({
         return;
       }
       if (key.meta || !input) return;
-      const text = input.replace(/\x1b?\[<\d+;\d+;\d+[Mm]/g, "");
+      const cleaned = input.replace(/\x1b?\[<\d+;\d+;\d+[Mm]/g, "");
+      const text = filter ? filter(cleaned) : cleaned;
       if (!text) return;
       apply(insertAt(value, cursor, text));
     },

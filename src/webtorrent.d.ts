@@ -42,6 +42,9 @@ declare module "webtorrent" {
     utp?: boolean;
     tracker?: boolean;
     lsd?: boolean;
+    // Bandwidth caps in bytes/sec; -1 (or omitted) means unlimited.
+    downloadLimit?: number;
+    uploadLimit?: number;
   }
 
   class WebTorrent extends EventEmitter {
@@ -62,6 +65,9 @@ declare module "webtorrent" {
     ): Torrent;
     get(torrentId: string): Torrent | null;
     remove(torrentId: string, cb?: (err?: Error) => void): void;
+    // Live bandwidth caps in bytes/sec; a rate < 0 disables the cap.
+    throttleDownload(rate: number): void;
+    throttleUpload(rate: number): void;
     destroy(cb?: (err?: Error) => void): void;
   }
 

@@ -35,13 +35,36 @@ function message(e: unknown): string {
 export class TorrentEngine {
   private client: WebTorrent | null = null;
   private torrents = new Map<string, Torrent>();
+  // Bandwidth caps in bytes/sec; -1 means unlimited. Applied to the client at
+  // creation and, once it exists, live via throttleDownload/throttleUpload.
+  private downloadLimit = -1;
+  private uploadLimit = -1;
 
   private ensureClient(): WebTorrent {
     if (!this.client) {
-      this.client = new WebTorrent();
+      this.client = new WebTorrent({
+        downloadLimit: this.downloadLimit,
+        uploadLimit: this.uploadLimit,
+      });
       this.client.on("error", () => {});
     }
     return this.client;
+  }
+
+  // Set the download/upload caps (bytes/sec, -1 = unlimited). Takes effect
+  // immediately on a running client and is remembered for the next one.
+  setLimits(downloadBytes: number, uploadBytes: number): void {
+    this.downloadLimit = downloadBytes;
+    this.uploadLimit = uploadBytes;
+    if (this.client) {
+      this.client.throttleDownload(downloadBytes);
+      this.client.throttleUpload(uploadBytes);
+    }
+  }
+
+  // Current caps in bytes/sec (-1 = unlimited); for diagnostics and tests.
+  currentLimits(): { download: number; upload: number } {
+    return { download: this.downloadLimit, upload: this.uploadLimit };
   }
 
   // `source` is a magnet URI, an infoHash, or a path to a .torrent file. Seeding

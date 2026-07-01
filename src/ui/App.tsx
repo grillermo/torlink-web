@@ -33,6 +33,7 @@ import { Spinner } from "./components/Spinner";
 import { TabTitle } from "./components/TabTitle";
 import { Splash } from "./views/Splash";
 import { FolderPrompt } from "./components/FolderPrompt";
+import { ThrottlePrompt, type ThrottleDirection } from "./components/ThrottlePrompt";
 import { footerHints } from "./keymap";
 import { COLOR, ICON } from "./theme";
 import { useMouseWheel } from "./hooks/useMouseWheel";
@@ -83,6 +84,8 @@ export function App({
   const [seedFocus, setSeedFocus] = useState<SeedFocus | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [editingFolder, setEditingFolder] = useState(false);
+  const [throttleField, setThrottleField] = useState<ThrottleDirection | null>(null);
+  const editingThrottle = throttleField !== null;
   const [notice, setNotice] = useState<string | null>(null);
   const booting = useRef(false);
 
@@ -100,6 +103,7 @@ export function App({
         q.suspend();
         return;
       }
+      q.setThrottle(cfg.maxDownloadKbps, cfg.maxUploadKbps);
       setConfigState(cfg);
       setQueue(q);
       const launch = initialMagnet
@@ -156,6 +160,33 @@ export function App({
   const closeFolderPrompt = useCallback(() => {
     setEditingFolder(false);
   }, []);
+
+  const closeThrottlePrompt = useCallback(() => {
+    setThrottleField(null);
+  }, []);
+
+  const submitThrottle = useCallback(
+    (raw: string) => {
+      const field = throttleField;
+      closeThrottlePrompt();
+      if (!config || !field) return;
+      // Blank or unparseable means "no cap" (0); config sanitizing floors/clamps.
+      const n = Number.parseInt(raw.trim(), 10);
+      const kbps = Number.isFinite(n) && n > 0 ? n : 0;
+      const key = field === "download" ? "maxDownloadKbps" : "maxUploadKbps";
+      const arrow = field === "download" ? "↓" : "↑";
+      if (kbps === config[key]) {
+        setNotice(`${arrow} throttle unchanged.`);
+        return;
+      }
+      const next = { ...config, [key]: kbps };
+      setConfig(next);
+      queue?.setThrottle(next.maxDownloadKbps, next.maxUploadKbps);
+      const label = kbps > 0 ? `${kbps} KB/s` : "unlimited";
+      setNotice(`Throttle: ${arrow} ${label}`);
+    },
+    [config, queue, setConfig, closeThrottlePrompt, throttleField],
+  );
 
   const setDownloadDir = useCallback(
     (raw: string) => {
@@ -278,7 +309,7 @@ export function App({
       submitQuery,
       section,
       setSection,
-      region: showHelp || editingFolder ? "help" : region,
+      region: showHelp || editingFolder || editingThrottle ? "help" : region,
       setRegion,
       captureMode,
       setCaptureMode,
@@ -307,6 +338,7 @@ export function App({
     region,
     showHelp,
     editingFolder,
+    editingThrottle,
     captureMode,
     downloadFocus,
     seedFocus,
@@ -329,6 +361,7 @@ export function App({
         return;
       }
       if (editingFolder) return; // the folder prompt owns input (its own esc + enter)
+      if (editingThrottle) return; // the throttle prompt owns input (its own esc + enter)
       if (captureMode === "text") return;
       if (showHelp) {
         setShowHelp(false);
@@ -341,6 +374,16 @@ export function App({
       if (input === "o") {
         setShowHelp(false);
         setEditingFolder(true);
+        return;
+      }
+      if (input === "t") {
+        setShowHelp(false);
+        setThrottleField("download");
+        return;
+      }
+      if (input === "u") {
+        setShowHelp(false);
+        setThrottleField("upload");
         return;
       }
       if (input === "m") {
@@ -393,6 +436,9 @@ export function App({
     );
   }
 
+  const throttleValue =
+    throttleField === "upload" ? store.config.maxUploadKbps : store.config.maxDownloadKbps;
+
   return (
     <StoreContext.Provider value={store}>
       <TabTitle />
@@ -420,10 +466,22 @@ export function App({
           </Box>
         ) : null}
 
+        {throttleField ? (
+          <Box marginTop={1}>
+            <ThrottlePrompt
+              width={Math.max(24, Math.min(cols - 4, 62))}
+              direction={throttleField}
+              value={throttleValue > 0 ? String(throttleValue) : ""}
+              onSubmit={submitThrottle}
+              onCancel={closeThrottlePrompt}
+            />
+          </Box>
+        ) : null}
+
         <Box
           height={bodyH}
           marginTop={compact ? 0 : 1}
-          display={showHelp || editingFolder ? "none" : "flex"}
+          display={showHelp || editingFolder || editingThrottle ? "none" : "flex"}
           overflow="hidden"
         >
           <Sidebar />
@@ -439,7 +497,7 @@ export function App({
         </Box>
 
         {showFooter ? (
-          <Box display={showHelp || editingFolder ? "none" : "flex"}>
+          <Box display={showHelp || editingFolder || editingThrottle ? "none" : "flex"}>
             <Footer hints={footerHints(region, section, downloadFocus, seedFocus)} />
           </Box>
         ) : null}
