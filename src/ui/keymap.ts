@@ -41,6 +41,7 @@ export const HELP_GROUPS: HelpGroup[] = [
       { keys: "f", label: "Retry failed" },
       { keys: "d", label: "Download again" },
       { keys: "x", label: "Clear recent" },
+      { keys: "r", label: "Throttle download speed" },
     ],
   },
   {
@@ -48,6 +49,7 @@ export const HELP_GROUPS: HelpGroup[] = [
     hints: [
       { keys: "p", label: "Pause/resume" },
       { keys: "c", label: "Remove from list" },
+      { keys: "u", label: "Throttle upload speed" },
     ],
   },
 ];

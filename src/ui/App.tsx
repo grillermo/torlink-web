@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Text, useApp, useInput, useStdout, useStdin } from "ink";
 import { promises as fs } from "node:fs";
-import { loadConfig, saveConfig, type Config } from "../config/config";
+import { loadConfig, saveConfig, normalizeDirList, type Config } from "../config/config";
 import { normalizeDownloadDir } from "../config/folder";
 import { DownloadQueue } from "../download/queue";
 import { loadQueue, loadSeeds } from "../download/persist";
@@ -34,6 +34,7 @@ import { TabTitle } from "./components/TabTitle";
 import { Splash } from "./views/Splash";
 import { FolderPrompt } from "./components/FolderPrompt";
 import { TrackersPrompt } from "./components/TrackersPrompt";
+import { ThrottlePrompt, type ThrottleDirection } from "./components/ThrottlePrompt";
 import { footerHints } from "./keymap";
 import { COLOR, ICON } from "./theme";
 import { useMouseWheel } from "./hooks/useMouseWheel";
@@ -85,6 +86,8 @@ export function App({
   const [showHelp, setShowHelp] = useState(false);
   const [editingFolder, setEditingFolder] = useState(false);
   const [editingTrackers, setEditingTrackers] = useState(false);
+  const [throttleField, setThrottleField] = useState<ThrottleDirection | null>(null);
+  const editingThrottle = throttleField !== null;
   const [notice, setNotice] = useState<string | null>(null);
   const booting = useRef(false);
 
@@ -103,6 +106,7 @@ export function App({
         q.suspend();
         return;
       }
+      q.setThrottle(cfg.maxDownloadKbps, cfg.maxUploadKbps);
       setConfigState(cfg);
       setQueue(q);
       const launch = initialMagnet
@@ -185,6 +189,33 @@ export function App({
     [config, setConfig, closeTrackersPrompt],
   );
 
+  const closeThrottlePrompt = useCallback(() => {
+    setThrottleField(null);
+  }, []);
+
+  const submitThrottle = useCallback(
+    (raw: string) => {
+      const field = throttleField;
+      closeThrottlePrompt();
+      if (!config || !field) return;
+      // Blank or unparseable means "no cap" (0); config sanitizing floors/clamps.
+      const n = Number.parseInt(raw.trim(), 10);
+      const kbps = Number.isFinite(n) && n > 0 ? n : 0;
+      const key = field === "download" ? "maxDownloadKbps" : "maxUploadKbps";
+      const arrow = field === "download" ? "↓" : "↑";
+      if (kbps === config[key]) {
+        setNotice(`${arrow} throttle unchanged.`);
+        return;
+      }
+      const next = { ...config, [key]: kbps };
+      setConfig(next);
+      queue?.setThrottle(next.maxDownloadKbps, next.maxUploadKbps);
+      const label = kbps > 0 ? `${kbps} KB/s` : "unlimited";
+      setNotice(`Throttle: ${arrow} ${label}`);
+    },
+    [config, queue, setConfig, closeThrottlePrompt, throttleField],
+  );
+
   const setDownloadDir = useCallback(
     (raw: string) => {
       closeFolderPrompt();
@@ -200,11 +231,56 @@ export function App({
           setNotice(`Couldn't use folder: ${truncate(dir, 48)}`);
           return;
         }
-        setConfig({ ...config, downloadDir: dir });
+        setConfig({
+          ...config,
+          downloadDir: dir,
+          downloadDirs: normalizeDirList(dir, config.downloadDirs),
+        });
         setNotice(`Download folder: ${truncate(dir, 48)}`);
       })();
     },
     [config, setConfig, closeFolderPrompt],
+  );
+
+  const addFolder = useCallback(
+    (raw: string) => {
+      closeFolderPrompt();
+      const dir = normalizeDownloadDir(raw);
+      if (!config || !dir) return;
+      if (config.downloadDirs.includes(dir) && dir === config.downloadDir) {
+        setNotice("Download folder unchanged.");
+        return;
+      }
+      void (async () => {
+        try {
+          await fs.mkdir(dir, { recursive: true });
+        } catch {
+          setNotice(`Couldn't use folder: ${truncate(dir, 48)}`);
+          return;
+        }
+        setConfig({
+          ...config,
+          downloadDir: dir,
+          downloadDirs: normalizeDirList(dir, config.downloadDirs),
+        });
+        setNotice(`Download folder: ${truncate(dir, 48)}`);
+      })();
+    },
+    [config, setConfig, closeFolderPrompt],
+  );
+
+  const removeFolder = useCallback(
+    (dir: string) => {
+      if (!config) return;
+      if (dir === config.downloadDir) {
+        setNotice("Can't remove the active folder.");
+        return;
+      }
+      const downloadDirs = config.downloadDirs.filter((d) => d !== dir);
+      setConfig({ ...config, downloadDirs });
+      setNotice(`Removed: ${truncate(dir, 48)}`);
+    },
+    [config, setConfig],
   );
 
   const startDownload = useCallback(
@@ -306,7 +382,8 @@ export function App({
       submitQuery,
       section,
       setSection,
-      region: showHelp || editingFolder || editingTrackers ? "help" : region,
+      region:
+        showHelp || editingFolder || editingTrackers || editingThrottle ? "help" : region,
       setRegion,
       captureMode,
       setCaptureMode,
@@ -336,6 +413,7 @@ export function App({
     showHelp,
     editingFolder,
     editingTrackers,
+    editingThrottle,
     captureMode,
     downloadFocus,
     seedFocus,
@@ -357,7 +435,7 @@ export function App({
         quitAll();
         return;
       }
-      if (editingFolder || editingTrackers) return; // the prompt owns input (its own esc + enter)
+      if (editingFolder || editingTrackers || editingThrottle) return; // the prompt owns input (its own esc + enter)
       if (captureMode === "text") return;
       if (showHelp) {
         setShowHelp(false);
@@ -375,6 +453,16 @@ export function App({
       if (input === "t") {
         setShowHelp(false);
         setEditingTrackers(true);
+        return;
+      }
+      if (input === "r") {
+        setShowHelp(false);
+        setThrottleField("download");
+        return;
+      }
+      if (input === "u") {
+        setShowHelp(false);
+        setThrottleField("upload");
         return;
       }
       if (input === "m") {
@@ -427,6 +515,9 @@ export function App({
     );
   }
 
+  const throttleValue =
+    throttleField === "upload" ? store.config.maxUploadKbps : store.config.maxDownloadKbps;
+
   return (
     <StoreContext.Provider value={store}>
       <TabTitle />
@@ -447,8 +538,11 @@ export function App({
           <Box marginTop={1}>
             <FolderPrompt
               width={Math.max(24, Math.min(cols - 4, 62))}
-              value={store.config.downloadDir}
-              onSubmit={setDownloadDir}
+              dirs={store.config.downloadDirs}
+              active={store.config.downloadDir}
+              onActivate={setDownloadDir}
+              onAdd={addFolder}
+              onRemove={removeFolder}
               onCancel={closeFolderPrompt}
             />
           </Box>
@@ -465,10 +559,24 @@ export function App({
           </Box>
         ) : null}
 
+        {throttleField ? (
+          <Box marginTop={1}>
+            <ThrottlePrompt
+              width={Math.max(24, Math.min(cols - 4, 62))}
+              direction={throttleField}
+              value={throttleValue > 0 ? String(throttleValue) : ""}
+              onSubmit={submitThrottle}
+              onCancel={closeThrottlePrompt}
+            />
+          </Box>
+        ) : null}
+
         <Box
           height={bodyH}
           marginTop={compact ? 0 : 1}
-          display={showHelp || editingFolder || editingTrackers ? "none" : "flex"}
+          display={
+            showHelp || editingFolder || editingTrackers || editingThrottle ? "none" : "flex"
+          }
           overflow="hidden"
         >
           <Sidebar />
@@ -484,7 +592,11 @@ export function App({
         </Box>
 
         {showFooter ? (
-          <Box display={showHelp || editingFolder || editingTrackers ? "none" : "flex"}>
+          <Box
+            display={
+              showHelp || editingFolder || editingTrackers || editingThrottle ? "none" : "flex"
+            }
+          >
             <Footer hints={footerHints(region, section, downloadFocus, seedFocus)} />
           </Box>
         ) : null}

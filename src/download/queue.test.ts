@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DownloadQueue, strayDownload } from "./queue";
+import { DownloadQueue, strayDownload, kbpsToBytes } from "./queue";
 import type { HistoryItem } from "./history";
 
 function h(over: Partial<HistoryItem> = {}): HistoryItem {
@@ -39,6 +39,30 @@ describe("DownloadQueue seeding", () => {
     q.restoreSeeds([{ id: "h4", status: "paused" }]);
     expect(q.getSeed("h4")?.status).toBe("paused");
     expect(q.seedingCount).toBe(0);
+    q.suspend();
+  });
+});
+
+describe("kbpsToBytes", () => {
+  it("maps 0 (unlimited) to -1", () => {
+    expect(kbpsToBytes(0)).toBe(-1);
+  });
+
+  it("maps a negative rate to -1 (unlimited)", () => {
+    expect(kbpsToBytes(-3)).toBe(-1);
+  });
+
+  it("converts KB/s to bytes/sec with a 1024 factor", () => {
+    expect(kbpsToBytes(1500)).toBe(1536000);
+  });
+});
+
+describe("DownloadQueue.setThrottle", () => {
+  it("accepts rates without spinning up the engine", () => {
+    const q = new DownloadQueue();
+    // No torrents added, so this only records limits — it must not construct
+    // webtorrent or throw.
+    expect(() => q.setThrottle(1500, 0)).not.toThrow();
     q.suspend();
   });
 });

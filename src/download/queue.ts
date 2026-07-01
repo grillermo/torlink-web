@@ -26,6 +26,12 @@ export function strayDownload(s: { total: number; progress: number; speed: numbe
   return s.total > 0 && s.progress < 1 && s.speed > 0;
 }
 
+// Convert a throttle rate in KB/s to the bytes/sec webtorrent expects. 0 or a
+// negative value means "no cap", which webtorrent encodes as -1.
+export function kbpsToBytes(kbps: number): number {
+  return kbps > 0 ? kbps * 1024 : -1;
+}
+
 const STRAY_TICKS = 2; // consecutive stray polls before flagging missing (~1s)
 
 // How long (ms) to let webtorrent verify on-disk pieces before the stray-download
@@ -74,6 +80,12 @@ export class DownloadQueue extends EventEmitter {
 
   has(id: string): boolean {
     return this.items.has(id);
+  }
+
+  // Apply bandwidth caps in KB/s (0 = unlimited) to the engine — live for any
+  // running torrents and remembered for future ones.
+  setThrottle(downloadKbps: number, uploadKbps: number): void {
+    this.engine.setLimits(kbpsToBytes(downloadKbps), kbpsToBytes(uploadKbps));
   }
 
   add(input: AddInput, dir: string): void {

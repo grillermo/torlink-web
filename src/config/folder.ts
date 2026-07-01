@@ -16,5 +16,13 @@ export function expandHome(input: string, home: string = os.homedir()): string {
 export function normalizeDownloadDir(input: string, home: string = os.homedir()): string {
   const expanded = expandHome(input, home);
   if (!expanded) return "";
-  return path.normalize(expanded);
+  const normalized = path.normalize(expanded);
+  // Remove trailing separators for consistent comparison (except for root paths).
+  // On POSIX, "/" is root; on Windows, "C:\" is root. Use path.parse to detect.
+  const parsed = path.parse(normalized);
+  if (parsed.root === normalized) {
+    return normalized; // Root path; preserve as-is
+  }
+  // Strip trailing separator (matches both "/" and "\")
+  return normalized.replace(/[/\\]$/, "");
 }
