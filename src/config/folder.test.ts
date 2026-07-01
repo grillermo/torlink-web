@@ -1,6 +1,23 @@
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { expandHome, normalizeDownloadDir } from "./folder";
+
+// folder.ts imports the host-native "node:path", which on this repo's POSIX
+// dev/CI machines always resolves to path.posix. To actually exercise the
+// Windows branch of normalizeDownloadDir (backslash separators, "C:\" drive
+// roots) we swap in path.win32 for the duration of a single dynamic import,
+// so the production code genuinely runs Windows path semantics regardless of
+// the host OS.
+async function importWithWin32Path() {
+  vi.resetModules();
+  vi.doMock("node:path", async () => {
+    const actual = await vi.importActual<typeof import("node:path")>("node:path");
+    return { ...actual.win32, default: actual.win32 };
+  });
+  const mod = await import("./folder");
+  vi.doUnmock("node:path");
+  return mod;
+}
 
 const HOME = path.join(path.sep, "home", "ada");
 
@@ -55,5 +72,27 @@ describe("normalizeDownloadDir", () => {
     const result = normalizeDownloadDir(root, HOME);
     const parsed = path.parse(result);
     expect(parsed.root).toBe(result);
+  });
+});
+
+// The tests above run against the host's native path module, which is always
+// path.posix on this repo's dev/CI machines - so they never actually exercise
+// the Windows branch (backslash separators, "C:\" drive roots). These tests
+// force node:path to resolve to path.win32 for the duration of the import, so
+// the code under test genuinely runs Windows path semantics.
+describe("normalizeDownloadDir on Windows-style paths", () => {
+  it("dedupes a trailing backslash the same as no trailing backslash", async () => {
+    const { normalizeDownloadDir: normalizeWin32 } = await importWithWin32Path();
+
+    const withoutTrailing = normalizeWin32("C:\\Users\\ada\\Downloads", "C:\\Users\\ada");
+    const withTrailing = normalizeWin32("C:\\Users\\ada\\Downloads\\", "C:\\Users\\ada");
+
+    expect(withTrailing).toBe(withoutTrailing);
+  });
+
+  it("preserves a Windows drive root", async () => {
+    const { normalizeDownloadDir: normalizeWin32 } = await importWithWin32Path();
+
+    expect(normalizeWin32("C:\\", "C:\\Users\\ada")).toBe("C:\\");
   });
 });
