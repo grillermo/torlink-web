@@ -75,4 +75,52 @@ describe("FolderPrompt", () => {
     await tick();
     expect(onCancel).toHaveBeenCalled();
   });
+
+  it("escaping out of add-mode returns to the list without adding or cancelling", async () => {
+    const onAdd = vi.fn();
+    const onCancel = vi.fn();
+    const { stdin, lastFrame } = render(
+      <FolderPrompt {...base} onAdd={onAdd} onCancel={onCancel} />,
+    );
+
+    stdin.write("a"); // jump to add input
+    await tick();
+    // The add row now hosts the TextField placeholder, not the static label.
+    expect((lastFrame() ?? "").toLowerCase()).not.toContain("add new");
+
+    stdin.write(ESC);
+    await tick();
+    // Back in list mode: the static "+ add new folder…" label is showing again.
+    expect((lastFrame() ?? "").toLowerCase()).toContain("add new");
+    expect(onAdd).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it("does not desync the cursor when the parent refuses to remove the highlighted folder", async () => {
+    const dirs = ["/a", "/b", "/c"];
+    const onRemove = vi.fn();
+    const onActivate = vi.fn();
+    const { stdin, rerender } = render(
+      <FolderPrompt {...base} dirs={dirs} onRemove={onRemove} onActivate={onActivate} />,
+    );
+
+    // Move the highlight to the last folder, then ask to remove it.
+    stdin.write("j");
+    await tick();
+    stdin.write("j");
+    await tick();
+    stdin.write("d");
+    await tick();
+    expect(onRemove).toHaveBeenCalledWith("/c");
+
+    // Parent refuses the removal: it re-renders with the SAME dirs list.
+    rerender(<FolderPrompt {...base} dirs={dirs} onRemove={onRemove} onActivate={onActivate} />);
+    await tick();
+
+    // If the cursor had preemptively clamped as though the removal happened,
+    // enter here would activate "/b" instead of the still-highlighted "/c".
+    stdin.write(ENTER);
+    await tick();
+    expect(onActivate).toHaveBeenCalledWith("/c");
+  });
 });

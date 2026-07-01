@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TextField } from "./TextField";
 import { Panel } from "./Panel";
@@ -31,6 +31,13 @@ export function FolderPrompt({
   });
   const [adding, setAdding] = useState(false);
 
+  // Keep the cursor in range whenever the folder list actually changes size
+  // (e.g. the parent accepts a removal). If a removal is refused, dirs.length
+  // is unchanged and the cursor is left alone.
+  useEffect(() => {
+    setCursor((c) => Math.min(c, dirs.length));
+  }, [dirs.length]);
+
   useInput(
     (input, key) => {
       if (adding) {
@@ -56,18 +63,20 @@ export function FolderPrompt({
         return;
       }
       if (key.return) {
-        if (cursor === addRow) setAdding(true);
-        else onActivate(dirs[cursor]);
+        if (cursor === addRow) {
+          setAdding(true);
+        } else {
+          const dir = dirs[cursor];
+          if (dir) onActivate(dir);
+        }
         return;
       }
       if ((key.delete || input === "d") && cursor < addRow) {
-        onRemove(dirs[cursor]);
-        // Keep the cursor in range after a removal shrinks the list.
-        setCursor((c) => Math.min(c, Math.max(0, dirs.length - 2)));
+        const dir = dirs[cursor];
+        if (dir) onRemove(dir);
         return;
       }
     },
-    { isActive: !adding },
   );
 
   return (
