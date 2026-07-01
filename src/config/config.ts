@@ -1,15 +1,18 @@
 import { promises as fs } from "node:fs";
 import { configFile, defaultDownloadDir } from "./paths";
+import { normalizeDownloadDir } from "./folder";
 import { serializeWrites, writeJsonAtomic } from "../util/atomic";
 
 export interface Config {
   downloadDir: string;
+  downloadDirs: string[];
   maxDownloadKbps: number; // 0 = unlimited
   maxUploadKbps: number; // 0 = unlimited
 }
 
 export const defaultConfig: Config = {
   downloadDir: defaultDownloadDir,
+  downloadDirs: [defaultDownloadDir],
   maxDownloadKbps: 0,
   maxUploadKbps: 0,
 };
@@ -20,6 +23,23 @@ export const defaultConfig: Config = {
 export function sanitizeKbps(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return 0;
   return Math.floor(value);
+}
+
+// The remembered download folders, cleaned into a stable shape: every entry a
+// non-empty normalized path, no duplicates, and the active dir guaranteed
+// present (prepended if a hand-edited or legacy config left it out).
+export function normalizeDirList(active: string, dirs: unknown): string[] {
+  const list = Array.isArray(dirs) ? dirs : [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of [active, ...list]) {
+    if (typeof entry !== "string") continue;
+    const dir = normalizeDownloadDir(entry);
+    if (!dir || seen.has(dir)) continue;
+    seen.add(dir);
+    out.push(dir);
+  }
+  return out;
 }
 
 export async function loadConfig(): Promise<Config> {
@@ -35,6 +55,8 @@ export async function loadConfig(): Promise<Config> {
     if (!cfg.downloadDir || typeof cfg.downloadDir !== "string") {
       cfg.downloadDir = defaultDownloadDir;
     }
+    cfg.downloadDir = normalizeDownloadDir(cfg.downloadDir) || defaultDownloadDir;
+    cfg.downloadDirs = normalizeDirList(cfg.downloadDir, cfg.downloadDirs);
     cfg.maxDownloadKbps = sanitizeKbps(cfg.maxDownloadKbps);
     cfg.maxUploadKbps = sanitizeKbps(cfg.maxUploadKbps);
     return cfg;

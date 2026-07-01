@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeKbps } from "./config";
+import { sanitizeKbps, normalizeDirList } from "./config";
 
 describe("sanitizeKbps", () => {
   it("keeps a positive rate", () => {
@@ -27,5 +27,29 @@ describe("sanitizeKbps", () => {
   it("falls back to 0 for NaN and Infinity", () => {
     expect(sanitizeKbps(Number.NaN)).toBe(0);
     expect(sanitizeKbps(Number.POSITIVE_INFINITY)).toBe(0);
+  });
+});
+
+describe("normalizeDirList", () => {
+  it("seeds the list from the active dir when dirs is missing", () => {
+    expect(normalizeDirList("/a", undefined)).toEqual(["/a"]);
+  });
+
+  it("drops blank and non-string entries", () => {
+    expect(normalizeDirList("/a", ["/a", "", "  ", 5, null, "/b"])).toEqual([
+      "/a",
+      "/b",
+    ]);
+  });
+
+  it("dedupes by normalized value", () => {
+    expect(normalizeDirList("/a", ["/a", "/a/", "/b", "/b"])).toEqual([
+      "/a",
+      "/b",
+    ]);
+  });
+
+  it("prepends the active dir when absent", () => {
+    expect(normalizeDirList("/a", ["/b", "/c"])).toEqual(["/a", "/b", "/c"]);
   });
 });

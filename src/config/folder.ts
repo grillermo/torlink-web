@@ -16,5 +16,7 @@ export function expandHome(input: string, home: string = os.homedir()): string {
 export function normalizeDownloadDir(input: string, home: string = os.homedir()): string {
   const expanded = expandHome(input, home);
   if (!expanded) return "";
-  return path.normalize(expanded);
+  const normalized = path.normalize(expanded);
+  // Remove trailing slashes for consistent comparison (except for root "/")
+  return normalized === "/" ? normalized : normalized.replace(/\/$/, "");
 }
