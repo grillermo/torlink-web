@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Box, Text, useApp, useInput, useStdout, useStdin } from "ink";
 import { promises as fs } from "node:fs";
-import { loadConfig, saveConfig, type Config } from "../config/config";
+import { loadConfig, saveConfig, normalizeDirList, type Config } from "../config/config";
 import { normalizeDownloadDir } from "../config/folder";
 import { DownloadQueue } from "../download/queue";
 import { loadQueue, loadSeeds } from "../download/persist";
@@ -203,11 +203,56 @@ export function App({
           setNotice(`Couldn't use folder: ${truncate(dir, 48)}`);
           return;
         }
-        setConfig({ ...config, downloadDir: dir });
+        setConfig({
+          ...config,
+          downloadDir: dir,
+          downloadDirs: normalizeDirList(dir, config.downloadDirs),
+        });
         setNotice(`Download folder: ${truncate(dir, 48)}`);
       })();
     },
     [config, setConfig, closeFolderPrompt],
+  );
+
+  const addFolder = useCallback(
+    (raw: string) => {
+      closeFolderPrompt();
+      const dir = normalizeDownloadDir(raw);
+      if (!config || !dir) return;
+      if (config.downloadDirs.includes(dir) && dir === config.downloadDir) {
+        setNotice("Download folder unchanged.");
+        return;
+      }
+      void (async () => {
+        try {
+          await fs.mkdir(dir, { recursive: true });
+        } catch {
+          setNotice(`Couldn't use folder: ${truncate(dir, 48)}`);
+          return;
+        }
+        setConfig({
+          ...config,
+          downloadDir: dir,
+          downloadDirs: normalizeDirList(dir, config.downloadDirs),
+        });
+        setNotice(`Download folder: ${truncate(dir, 48)}`);
+      })();
+    },
+    [config, setConfig, closeFolderPrompt],
+  );
+
+  const removeFolder = useCallback(
+    (dir: string) => {
+      if (!config) return;
+      if (dir === config.downloadDir) {
+        setNotice("Can't remove the active folder.");
+        return;
+      }
+      const downloadDirs = config.downloadDirs.filter((d) => d !== dir);
+      setConfig({ ...config, downloadDirs });
+      setNotice(`Removed: ${truncate(dir, 48)}`);
+    },
+    [config, setConfig],
   );
 
   const startDownload = useCallback(
@@ -459,8 +504,11 @@ export function App({
           <Box marginTop={1}>
             <FolderPrompt
               width={Math.max(24, Math.min(cols - 4, 62))}
-              value={store.config.downloadDir}
-              onSubmit={setDownloadDir}
+              dirs={store.config.downloadDirs}
+              active={store.config.downloadDir}
+              onActivate={setDownloadDir}
+              onAdd={addFolder}
+              onRemove={removeFolder}
               onCancel={closeFolderPrompt}
             />
           </Box>
