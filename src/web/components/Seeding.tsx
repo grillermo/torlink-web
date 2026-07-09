@@ -23,6 +23,7 @@ function sourceStyle(source: HistoryItem["source"]): { tag: string; tone: string
     case "tpb-tv": return { tag: "TPB", tone: "source-tpb" };
     case "x1337-movies":
     case "x1337-tv": return { tag: "1337", tone: "source-1337x" };
+    case "bittorrented": return { tag: "BT", tone: "source-bittorrented" };
     default: return { tag: "mag", tone: "dim" };
   }
 }

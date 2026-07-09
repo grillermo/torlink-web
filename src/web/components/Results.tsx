@@ -31,6 +31,7 @@ function sourceStyle(source: TorrentResult["source"]): { tag: string; tone: stri
     case "tpb-tv": return { tag: "TPB", tone: "source-tpb" };
     case "x1337-movies":
     case "x1337-tv": return { tag: "1337", tone: "source-1337x" };
+    case "bittorrented": return { tag: "BT", tone: "source-bittorrented" };
   }
 }
 
@@ -79,15 +80,16 @@ export function Results() {
   const focused = region === "content";
   const activeCategory = CATEGORIES.find((category) => category.key === section);
   const results = useMemo(() => {
-    const filtered = activeCategory?.group
-      ? search.results.filter((result) => getSource(result.source).group === activeCategory.group)
+    const group = activeCategory?.group;
+    const filtered = group
+      ? search.results.filter((result) => getSource(result.source).groups?.includes(group))
       : search.results;
     return sortResults(filtered, sort);
   }, [activeCategory?.group, search.results, sort]);
   const clamped = Math.min(cursor, Math.max(0, results.length - 1));
   const browsing = query.trim() === "";
   const erroredCount = Object.values(search.perSource).filter((source) => source.error).length;
-  const tabSources = activeCategory?.group ? SOURCES.filter((source) => source.group === activeCategory.group) : SOURCES;
+  const tabSources = activeCategory?.group ? SOURCES.filter((source) => source.groups?.includes(activeCategory.group!)) : SOURCES;
   const tabErrored = tabSources.length > 0 && tabSources.every((source) => search.perSource[source.id]?.error);
   const showStats = results.some((result) => result.sizeBytes > 0 || result.seeders > 0);
 

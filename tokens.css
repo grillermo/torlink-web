@@ -34,6 +34,7 @@
   --color-source-solid: oklch(71.9% 0.1322 264.2);
   --color-source-tpb: oklch(82.17% 0.0996 182.49);
   --color-source-1337x: oklch(78.7% 0.1373 50.56);
+  --color-source-bittorrented: oklch(76.5% 0.0996 249.6);
 
   /* Type — monospace-only is the design. JetBrains Mono bundled, never CDN. */
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;

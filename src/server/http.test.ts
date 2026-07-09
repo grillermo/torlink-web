@@ -20,7 +20,7 @@ vi.mock("../sources/registry", () => ({
   SOURCES: [{
     id: "yts",
     label: "YTS",
-    group: "Movies",
+    groups: ["Movies"],
     homepage: "https://example.test",
     search: async (query: string, opts?: { signal?: AbortSignal }) => {
       searchHarness.calls.push(query);

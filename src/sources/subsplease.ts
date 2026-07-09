@@ -69,7 +69,7 @@ async function search(query: string, opts: SearchOptions = {}): Promise<TorrentR
 export const subsplease: Source = {
   id: "subsplease",
   label: "SubsPlease",
-  group: "Anime",
+  groups: ["Anime"],
   homepage: "https://subsplease.org",
   search,
 };

@@ -70,6 +70,7 @@ body {
 .source-solid { color: var(--color-source-solid); }
 .source-tpb { color: var(--color-source-tpb); }
 .source-1337x { color: var(--color-source-1337x); }
+.source-bittorrented { color: var(--color-source-bittorrented); }
 .good { color: var(--color-good); --bar-base-color: var(--color-good); }
 .warn { color: var(--color-warn); --bar-base-color: var(--color-warn); }
 .bad { color: var(--color-bad); --bar-base-color: var(--color-bad); }

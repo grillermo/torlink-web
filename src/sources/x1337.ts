@@ -144,7 +144,7 @@ async function search(
 export const x1337Movies: Source = {
   id: "x1337-movies",
   label: "1337x",
-  group: "Movies",
+  groups: ["Movies"],
   homepage: "https://1337x.to",
   search: (query, opts = {}) => search(query, "Movies", "x1337-movies", opts),
 };
@@ -152,7 +152,7 @@ export const x1337Movies: Source = {
 export const x1337Tv: Source = {
   id: "x1337-tv",
   label: "1337x",
-  group: "TV",
+  groups: ["TV"],
   homepage: "https://1337x.to",
   search: (query, opts = {}) => search(query, "TV", "x1337-tv", opts),
 };

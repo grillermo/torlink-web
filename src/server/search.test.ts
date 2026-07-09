@@ -24,7 +24,7 @@ function result(id: string): TorrentResult {
 }
 
 function source(id: Source["id"], search: Source["search"]): Source {
-  return { id, label: id, group: "Movies", homepage: "x", search };
+  return { id, label: id, groups: ["Movies"], homepage: "x", search };
 }
 
 function parse(chunks: string[]): { event: string; data: unknown }[] {

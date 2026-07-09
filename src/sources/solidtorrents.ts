@@ -54,7 +54,7 @@ async function search(query: string, opts: SearchOptions = {}): Promise<TorrentR
 export const solid: Source = {
   id: "solid",
   label: "Solid",
-  group: "TV",
+  groups: ["TV"],
   homepage: "https://solidtorrents.net",
   search,
 };

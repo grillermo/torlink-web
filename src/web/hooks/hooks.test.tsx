@@ -3,6 +3,7 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppState } from "../../server/state";
 import type { SourceId, TorrentResult } from "../../sources/types";
+import { SOURCES } from "../../sources/registry";
 import { useConcurrentSearch } from "./useConcurrentSearch";
 import { useServerState } from "./useServerState";
 
@@ -142,7 +143,7 @@ describe("useConcurrentSearch", () => {
     });
 
     expect(result.current.done).toBe(1);
-    expect(result.current.total).toBe(10);
+    expect(result.current.total).toBe(SOURCES.length);
   });
 
   it("ignores malformed, prototype, and unknown source events", () => {

@@ -6,7 +6,7 @@ const HOME = "https://fitgirl-repacks.site";
 export const fitgirl: Source = {
   id: "fitgirl",
   label: "FitGirl",
-  group: "Games",
+  groups: ["Games"],
   homepage: HOME,
   search: (query, opts) => fetchWordpressRss(HOME, "fitgirl", query, opts),
 };
