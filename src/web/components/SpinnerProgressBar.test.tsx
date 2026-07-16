@@ -28,4 +28,12 @@ describe("ProgressBar", () => {
     view.rerender(<ProgressBar pct={-1} width={4} />);
     expect(view.container.textContent).toBe("░░░░");
   });
+
+  it("retains an explicitly supplied paused color on filled cells", () => {
+    const view = render(<ProgressBar pct={50} width={4} color="#7c7785" />);
+
+    for (const cell of view.container.querySelectorAll<HTMLElement>(".bar-cell")) {
+      expect(cell.style.color).toBe("rgb(124, 119, 133)");
+    }
+  });
 });

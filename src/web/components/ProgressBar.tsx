@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { COLOR } from "../../ui/theme";
 import { SHEEN_TICK_MS, sheenCenter, sheenIntensity, sheenPeriod } from "../../ui/sheen";
 
-function tone(color: string): string {
+function tone(color: string): string | undefined {
   if (color === COLOR.good) return "good";
   if (color === COLOR.warn) return "warn";
   if (color === COLOR.bad) return "bad";
-  return "accent";
+  if (color === COLOR.accent) return "accent";
+  return undefined;
 }
 
 function sheenClass(intensity: number): string {
@@ -38,12 +39,14 @@ export function ProgressBar({
   }, [animate]);
 
   const center = sheenCenter(tick, sheenPeriod(width));
+  const colorClass = tone(color);
   return (
     <span aria-label={`${clamped}%`}>
       {Array.from({ length: filled }, (_, index) => (
         <span
-          className={`${tone(color)} bar-cell ${animate ? sheenClass(sheenIntensity(index, center)) : ""}`}
+          className={`${colorClass ?? ""} bar-cell ${animate ? sheenClass(sheenIntensity(index, center)) : ""}`}
           key={index}
+          style={colorClass ? undefined : { color }}
         >█</span>
       ))}
       {empty > 0 ? <span className="fg-rule">{"░".repeat(empty)}</span> : null}
