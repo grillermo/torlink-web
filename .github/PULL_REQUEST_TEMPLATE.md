@@ -8,7 +8,7 @@
 - [ ] `npm test` passes
 - [ ] New logic has a test (vitest; mock node built-ins for platform code)
 - [ ] If I added a key, I updated both `HELP_GROUPS` and `footerHints` in `src/web/keymap.ts`
-- [ ] If I added a `Store` field, I updated `makeStore` in `src/web/store.ts`
+- [ ] If I added a `Store` field, I updated the store assembly in `src/web/App.tsx`
 - [ ] OS-touching code works on Windows, macOS, and Linux
 - [ ] One concern, with a Conventional Commits title (`feat:` / `fix:` / `docs:` / `chore:`)
 

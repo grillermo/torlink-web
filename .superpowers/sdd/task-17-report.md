@@ -144,6 +144,7 @@ Exact output:
 
 ```text
 (no matches)
+```
 
 ## Local web-app copy cleanup
 
@@ -218,4 +219,3 @@ $ rtk npm run typecheck
 ```
 
 Exit status: 0.
-```

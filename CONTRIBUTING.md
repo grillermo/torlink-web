@@ -43,7 +43,7 @@ Then check your change against the standards below. The pull request template wa
 
 ### Match the existing grain
 
-Reuse what's there before you write something new. Cursor movement goes through `wrapStep` (`src/web/move.ts`). Key hints live in the `Hint` / `HELP_GROUPS` / `footerHints` system (`src/web/keymap.ts`). Shared app state is the `Store` interface (`src/web/store.ts`).
+Reuse what's there before you write something new. Cursor movement goes through `wrapStep` (`src/web/move.ts`). Key hints live in the `Hint` / `HELP_GROUPS` / `footerHints` system (`src/web/keymap.ts`). Shared app state is the `Store` interface, assembled in `src/web/App.tsx`.
 
 #4 is the model here: it added a whole navigation mode and still introduced no new state, it leaned on the existing `region` and `captureMode` flags and reused `wrapStep`. If you catch yourself adding a parallel way to do something the codebase already does, stop and use the one that's already there.
 
@@ -68,7 +68,7 @@ Non-trivial logic gets a vitest test. Pure functions are easy, see `src/web/move
 torlink shows one contextual footer plus a `?` cheatsheet, never a wall of commands. Two rules when you add to it:
 
 - A new key means updating both halves of `src/web/keymap.ts`: `HELP_GROUPS` (the `?` sheet) and `footerHints` (the footer). #6 did both for `y`.
-- A new `Store` field means adding a matching entry to `makeStore` in `src/web/store.ts`. Keep the web app's store and components in sync; exercise the workflow with `npm run dev` and `npm test`.
+- A new `Store` field means adding a matching entry where the store is assembled in `src/web/App.tsx`. Keep the web app's store and components in sync; exercise the workflow with `npm run dev` and `npm test`.
 
 ### Respect the calm theme
 
