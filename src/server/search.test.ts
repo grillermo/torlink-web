@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { ServerResponse } from "node:http";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Source, TorrentResult } from "../sources/types";
 import { runSearchSse } from "./search";
 
@@ -37,6 +37,11 @@ function parse(chunks: string[]): { event: string; data: unknown }[] {
       data: JSON.parse(/data: (.*)/.exec(b)![1]!),
     }));
 }
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 describe("runSearchSse", () => {
   it("emits one source event per source then done", async () => {
@@ -81,22 +86,33 @@ describe("runSearchSse", () => {
     expect(parse(chunks).map((event) => event.event)).toEqual(["source", "source", "done"]);
   });
 
-  it("maps a per-source timeout and clears its timer", async () => {
-    const { res, chunks } = fakeRes();
-    await runSearchSse(res, "timeout", {
-      timeoutMs: 1,
-      sources: [source("yts", async (_query, opts) => await new Promise<TorrentResult[]>((_resolve, reject) => {
-        opts?.signal?.addEventListener("abort", () => reject(new Error("aborted")), { once: true });
-      }))],
+  it("settles with a timeout when the source ignores abort", async () => {
+    vi.useFakeTimers();
+    let resolveSearch!: (items: TorrentResult[]) => void;
+    const ignoredAbort = new Promise<TorrentResult[]>((resolve) => { resolveSearch = resolve; });
+    const { res, chunks, ended } = fakeRes();
+    const run = runSearchSse(res, "timeout", {
+      timeoutMs: 10,
+      sources: [source("yts", async () => ignoredAbort)],
     });
+    let settled = false;
+    void run.then(() => { settled = true; });
 
-    const event = parse(chunks).find((entry) => entry.event === "source")!.data as {
-      error: string; code: string;
-    };
-    expect(event).toMatchObject({ error: "timed out", code: "timed out" });
+    try {
+      await vi.advanceTimersByTimeAsync(10);
+      expect(settled).toBe(true);
+      expect(parse(chunks)).toEqual([
+        { event: "source", data: { sourceId: "yts", error: "timed out", code: "timed out" } },
+        { event: "done", data: {} },
+      ]);
+      expect(ended()).toBe(true);
+    } finally {
+      resolveSearch([]);
+      await run;
+    }
   });
 
-  it("stops writes and removes abort listeners after cancellation", async () => {
+  it("settles without writes when outer cancellation reaches a source that ignores abort", async () => {
     const ctrl = new AbortController();
     const removeAbortListener = vi.spyOn(ctrl.signal, "removeEventListener");
     const clearTimer = vi.spyOn(globalThis, "clearTimeout");
@@ -109,12 +125,21 @@ describe("runSearchSse", () => {
       }))],
     });
 
-    ctrl.abort();
-    rejectSearch(new Error("aborted"));
-    await run;
-    expect(parse(chunks)).toEqual([]);
-    expect(ended()).toBe(true);
-    expect(removeAbortListener).toHaveBeenCalledWith("abort", expect.any(Function));
-    expect(clearTimer).toHaveBeenCalled();
+    let settled = false;
+    void run.then(() => { settled = true; });
+
+    try {
+      ctrl.abort();
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(settled).toBe(true);
+      expect(parse(chunks)).toEqual([]);
+      expect(ended()).toBe(true);
+      expect(removeAbortListener).toHaveBeenCalledWith("abort", expect.any(Function));
+      expect(clearTimer).toHaveBeenCalled();
+    } finally {
+      rejectSearch(new Error("late source rejection"));
+      await run;
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    }
   });
 });

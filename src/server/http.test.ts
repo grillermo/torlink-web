@@ -6,6 +6,44 @@ import { ServerResponse, type Server } from "node:http";
 import { Core } from "./core";
 import { createToken, createTorlinkServer } from "./http";
 
+const searchHarness = vi.hoisted(() => ({
+  mode: "resolve" as "resolve" | "pending" | "deferred",
+  calls: [] as string[],
+  signals: [] as AbortSignal[],
+  releases: [] as Array<() => void>,
+}));
+
+vi.mock("../sources/registry", () => ({
+  SOURCES: [{
+    id: "yts",
+    label: "YTS",
+    group: "Movies",
+    homepage: "https://example.test",
+    search: async (query: string, opts?: { signal?: AbortSignal }) => {
+      searchHarness.calls.push(query);
+      if (opts?.signal) searchHarness.signals.push(opts.signal);
+      const item = {
+        infoHash: "http-result",
+        name: "HTTP result",
+        sizeBytes: 1,
+        seeders: 1,
+        leechers: 0,
+        source: "yts",
+        magnet: "magnet:?xt=urn:btih:http-result",
+      };
+      if (searchHarness.mode === "pending") {
+        return await new Promise<never>(() => {});
+      }
+      if (searchHarness.mode === "deferred") {
+        return await new Promise<typeof item[]>((resolve) => {
+          searchHarness.releases.push(() => resolve([item]));
+        });
+      }
+      return [item];
+    },
+  }],
+}));
+
 interface Ctx {
   base: string;
   token: string;
@@ -41,6 +79,11 @@ async function start(): Promise<Ctx> {
 
 afterEach(async () => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
+  searchHarness.mode = "resolve";
+  searchHarness.calls.length = 0;
+  searchHarness.signals.length = 0;
+  searchHarness.releases.length = 0;
   for (const stream of eventStreams.splice(0)) await stream.cancel();
   for (const ctx of ctxs.splice(0)) {
     await new Promise((resolve) => ctx.server.close(resolve));
@@ -175,6 +218,121 @@ async function waitForCondition(check: () => boolean): Promise<void> {
   }
   expect(check()).toBe(true);
 }
+
+function parseSseText(text: string): SseEvent[] {
+  return text
+    .split("\n\n")
+    .filter((block) => block.includes("event:"))
+    .map((block) => ({
+      event: /^event: (.*)$/m.exec(block)![1]!,
+      data: JSON.parse(/^data: (.*)$/m.exec(block)![1]!),
+    }));
+}
+
+describe("GET /api/search", () => {
+  it("requires the token and completes a deterministic SSE search", async () => {
+    const { base, token } = await start();
+    const unauthorized = await fetch(`${base}/api/search?q=http-normal`);
+    expect(unauthorized.status).toBe(401);
+    expect(searchHarness.calls).toEqual([]);
+
+    const response = await fetch(`${base}/api/search?q=http-normal&token=${token}`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/event-stream");
+    expect(parseSseText(await response.text())).toEqual([
+      {
+        event: "source",
+        data: {
+          sourceId: "yts",
+          items: [{
+            infoHash: "http-result",
+            name: "HTTP result",
+            sizeBytes: 1,
+            seeders: 1,
+            leechers: 0,
+            source: "yts",
+            magnet: "magnet:?xt=urn:btih:http-result",
+          }],
+        },
+      },
+      { event: "done", data: {} },
+    ]);
+    expect(searchHarness.calls).toEqual(["http-normal"]);
+  });
+
+  it("aborts and removes response listeners after client disconnect", async () => {
+    searchHarness.mode = "pending";
+    const { base, token, server } = await start();
+    let response: ServerResponse | undefined;
+    server.on("request", (req, res) => {
+      if (req.url?.startsWith("/api/search")) response = res;
+    });
+    const clientResponse = await fetch(`${base}/api/search?q=http-disconnect&token=${token}`);
+    try {
+      expect(response).toBeDefined();
+      expect(response!.listenerCount("close")).toBeGreaterThan(0);
+      expect(response!.listenerCount("error")).toBeGreaterThan(0);
+    } finally {
+      await clientResponse.body!.cancel();
+      await waitForCondition(() => searchHarness.signals[0]?.aborted === true);
+    }
+    await waitForCondition(() =>
+      response!.listenerCount("close") === 0 && response!.listenerCount("error") === 0,
+    );
+
+    expect(searchHarness.signals[0]!.aborted).toBe(true);
+  });
+
+  it("cleans up idempotently on response error followed by close", async () => {
+    searchHarness.mode = "pending";
+    const { base, token, server } = await start();
+    let response: ServerResponse | undefined;
+    server.on("request", (req, res) => {
+      if (req.url?.startsWith("/api/search")) response = res;
+    });
+    const clientResponse = await fetch(`${base}/api/search?q=http-error&token=${token}`);
+
+    expect(response).toBeDefined();
+    let emittedError: unknown;
+    try {
+      response!.emit("error", new Error("test search response error"));
+    } catch (error: unknown) {
+      emittedError = error;
+    } finally {
+      response!.emit("close");
+      await clientResponse.body!.cancel().catch(() => {});
+      await waitForCondition(() => searchHarness.signals[0]?.aborted === true);
+    }
+
+    expect(emittedError).toBeUndefined();
+    expect(response!.listenerCount("close")).toBe(0);
+    expect(response!.listenerCount("error")).toBe(0);
+  });
+
+  it("observes a terminal SSE failure after headers start", async () => {
+    searchHarness.mode = "deferred";
+    const { base, token, server } = await start();
+    let response: ServerResponse | undefined;
+    server.on("request", (req, res) => {
+      if (req.url?.startsWith("/api/search")) response = res;
+    });
+    const clientResponse = await fetch(`${base}/api/search?q=http-write-error&token=${token}`);
+    expect(response).toBeDefined();
+    const destroy = vi.spyOn(response!, "destroy");
+    response!.write = () => { throw new Error("test terminal SSE write failure"); };
+
+    try {
+      searchHarness.releases[0]!();
+      await waitForCondition(() => destroy.mock.calls.length > 0);
+
+      expect(response!.listenerCount("close")).toBe(0);
+      expect(response!.listenerCount("error")).toBe(0);
+      await expect(clientResponse.text()).rejects.toThrow();
+    } finally {
+      if (!response!.destroyed) response!.destroy();
+    }
+  });
+});
 
 describe("GET /api/events", () => {
   it("sends an initial state snapshot and pushes on updates", async () => {

@@ -238,10 +238,28 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
 
     if (req.method === "GET" && pathname === "/api/search") {
       const controller = new AbortController();
-      const onClose = (): void => controller.abort();
-      req.once("close", onClose);
+      let closed = false;
+      const cleanup = (): void => {
+        if (closed) return;
+        closed = true;
+        res.off("close", cleanup);
+        res.off("error", cleanup);
+        controller.abort();
+      };
+      const onRunError = (): void => {
+        cleanup();
+        try {
+          if (!res.headersSent) sendJson(res, 500, { error: "internal error" });
+          else if (!res.destroyed) res.destroy();
+        } catch {
+          if (!res.destroyed) res.destroy();
+        }
+      };
+      res.once("close", cleanup);
+      res.once("error", cleanup);
       void runSearchSse(res, url.searchParams.get("q") ?? "", { signal: controller.signal })
-        .finally(() => req.off("close", onClose));
+        .then(cleanup, onRunError)
+        .catch(() => {});
       return;
     }
 
