@@ -1,4 +1,6 @@
-import { LOGO_LINES, SPROUT_CELLS } from "../../ui/logo";
+import { useEffect, useState } from "react";
+import { LOGO_LINES, LOGO_WIDTH, SPROUT_CELLS } from "../../ui/logo";
+import { SHEEN_TICK_MS, sheenCenter, sheenIntensity, sheenPeriod } from "../../ui/sheen";
 
 function sheenTone(factor: number): string {
   if (factor < 0.15) return "logo-sheen-top";
@@ -9,6 +11,14 @@ function sheenTone(factor: number): string {
 
 export function Logo() {
   const rows = LOGO_LINES.length;
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setTick((value) => value + 1), SHEEN_TICK_MS);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const center = sheenCenter(tick, sheenPeriod(LOGO_WIDTH));
 
   return (
     <div className="col logo" aria-label="torlink">
@@ -24,7 +34,9 @@ export function Logo() {
             {chars.map((character, index) => {
               if (character === " ") return <span key={index}> </span>;
               if (SPROUT_CELLS.has(`${row},${index}`)) return <span className="b good" key={index}>{character}</span>;
-              return <span className={`b ${sheenTone((index / last + tY) / 2)}`} key={index}>{character}</span>;
+              const factor = (index / last + tY) / 2;
+              const intensity = sheenIntensity(index, center);
+              return <span className={`b ${sheenTone(factor * (1 - intensity))}`} key={index}>{character}</span>;
             })}
           </div>
         );

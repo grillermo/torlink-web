@@ -1,14 +1,18 @@
 // @vitest-environment jsdom
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AppState } from "../../server/state";
 import { LOGO_LINES } from "../../ui/logo";
+import { SHEEN_TICK_MS } from "../../ui/sheen";
 import { Logo } from "./Logo";
 import { TabTitle } from "./TabTitle";
 import { StoreContext, type Store } from "../store";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 const state: AppState = {
   queue: [
@@ -38,6 +42,19 @@ describe("Logo", () => {
     expect(view.container.querySelectorAll(".logo-line span")).toHaveLength(
       LOGO_LINES.reduce((total, line) => total + [...line].length, 0),
     );
+  });
+
+  it("advances the per-character sheen on its shared timer", () => {
+    vi.useFakeTimers();
+    const view = render(<Logo />);
+    const classesBefore = [...view.container.querySelectorAll(".logo-line span.b:not(.good)")]
+      .map((span) => span.className);
+
+    act(() => vi.advanceTimersByTime(SHEEN_TICK_MS * 10));
+
+    const classesAfter = [...view.container.querySelectorAll(".logo-line span.b:not(.good)")]
+      .map((span) => span.className);
+    expect(classesAfter).not.toEqual(classesBefore);
   });
 });
 

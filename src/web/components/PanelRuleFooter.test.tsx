@@ -30,16 +30,24 @@ describe("Rule", () => {
 });
 
 describe("Footer", () => {
-  it("keeps hint order and clicks through the key represented by a hint", () => {
+  it("keeps hint order and clicks through each represented keyboard key", () => {
     const keys: string[] = [];
-    window.addEventListener("keydown", (event) => keys.push(event.key), { once: true });
-    const view = render(<Footer hints={[{ keys: "q", label: "Quit" }, { keys: "?", label: "Keys" }]} />);
+    window.addEventListener("keydown", (event) => keys.push(event.key));
+    const view = render(
+      <Footer hints={[
+        { keys: "q", label: "Quit" },
+        { keys: "?", label: "Keys" },
+        { keys: "↵", label: "Confirm" },
+        { keys: "↑↓←→", label: "Move" },
+        { keys: "tab", label: "Switch pane" },
+      ]} />,
+    );
 
     const buttons = view.getAllByRole("button");
-    expect(buttons.map((button) => button.textContent)).toEqual(["q Quit", "? Keys"]);
-    const quit = buttons[0];
-    if (!quit) throw new Error("Expected a Quit hint button");
-    fireEvent.click(quit);
-    expect(keys).toEqual(["q"]);
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      "q Quit", "? Keys", "↵ Confirm", "↑↓←→ Move", "tab Switch pane",
+    ]);
+    buttons.forEach((button) => fireEvent.click(button));
+    expect(keys).toEqual(["q", "?", "Enter", "ArrowDown", "Tab"]);
   });
 });

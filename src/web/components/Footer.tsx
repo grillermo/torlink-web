@@ -3,6 +3,7 @@ import type { Hint } from "../../ui/keymap";
 function keyForHint(keys: string): string {
   if (keys === "↵") return "Enter";
   if (keys === "↑↓←→") return "ArrowDown";
+  if (keys === "tab") return "Tab";
   return keys;
 }
 
