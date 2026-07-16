@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
-import { parseCliArgs, HELP_TEXT } from "./cli/args";
+import { parseCliArgs, HELP_TEXT, type CliCommand } from "./cli/args";
+import { parsePort, StartupLifecycle } from "./cli/startup";
 import { Core } from "./server/core";
 import { createToken, createTorlinkServer } from "./server/http";
 import { openBrowser } from "./server/open";
@@ -22,43 +23,62 @@ if (cmd.kind === "invalid") {
   console.error(HELP_TEXT);
   process.exit(1);
 }
+if (cmd.kind !== "run") process.exit(1);
 
-const core = await Core.boot();
+const lifecycle = new StartupLifecycle((code) => process.exit(code));
+process.on("SIGINT", () => lifecycle.terminate(0));
+process.on("SIGTERM", () => lifecycle.terminate(0));
+process.on("uncaughtException", (error) => {
+  console.error(error);
+  lifecycle.fail(1);
+});
 
-const launch = cmd.initialMagnet
-  ? parseMagnet(cmd.initialMagnet)
-  : cmd.initialTorrent
-    ? await magnetFromTorrentFile(cmd.initialTorrent)
-    : null;
-if (launch) {
-  await core.startDownload({ id: launch.infoHash, name: launch.name, magnet: launch.magnet });
-}
+async function start(command: Extract<CliCommand, { kind: "run" }>): Promise<void> {
+  const core = await Core.boot();
+  lifecycle.setCore(core);
+  if (lifecycle.stopping) return;
 
-const token = process.env.TORLINK_TOKEN ?? createToken();
-const webRoot = fileURLToPath(new URL("./web/", import.meta.url));
+  const launch = command.initialMagnet
+    ? parseMagnet(command.initialMagnet)
+    : command.initialTorrent
+      ? await magnetFromTorrentFile(command.initialTorrent)
+      : null;
+  if (lifecycle.stopping) return;
+  if (launch) {
+    await core.startDownload({ id: launch.infoHash, name: launch.name, magnet: launch.magnet });
+  }
+  if (lifecycle.stopping) return;
 
-let quitting = false;
-function quit(code = 0): void {
-  if (quitting) process.exit(code);
-  quitting = true;
-  core.suspend();
-  server.close();
-  process.exit(code);
-}
+  const token = process.env.TORLINK_TOKEN ?? createToken();
+  const webRoot = fileURLToPath(new URL("./web/", import.meta.url));
+  const server = createTorlinkServer({
+    core,
+    token,
+    webRoot,
+    onQuit: () => lifecycle.terminate(0),
+  });
+  lifecycle.setServer(server);
+  if (lifecycle.stopping) return;
 
-const server = createTorlinkServer({ core, token, webRoot, onQuit: () => quit(0) });
-const port = Number(process.env.TORLINK_PORT) || 0;
-server.listen(port, "127.0.0.1", () => {
+  const port = parsePort(process.env.TORLINK_PORT);
+  await new Promise<void>((resolve, reject) => {
+    const onError = (error: Error): void => reject(error);
+    server.once("error", onError);
+    server.listen(port, "127.0.0.1", () => {
+      server.off("error", onError);
+      resolve();
+    });
+  });
+  if (lifecycle.stopping) return;
+
   const addr = server.address();
   const actual = addr && typeof addr !== "string" ? addr.port : port;
   const url = `http://127.0.0.1:${actual}/?token=${token}`;
   console.log(`torlink v${VERSION}\n\n  ${url}\n\nCtrl+C to quit.`);
   if (!process.env.TORLINK_NO_OPEN) openBrowser(url);
-});
+}
 
-process.on("SIGINT", () => quit(0));
-process.on("SIGTERM", () => quit(0));
-process.on("uncaughtException", (err) => {
-  console.error(err);
-  quit(1);
+void start(cmd).catch((error) => {
+  console.error(error);
+  lifecycle.fail(1);
 });
