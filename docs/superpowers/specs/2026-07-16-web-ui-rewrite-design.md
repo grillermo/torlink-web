@@ -11,7 +11,7 @@
 - **Look:** terminal aesthetic — monospace, dark, TUI palette, same layout (sidebar, panels, footer hints).
 - **Frontend stack:** React + Vite SPA. Components ported 1:1 from Ink to DOM.
 - **Transport:** HTTP POST for actions, SSE for live state. No WebSocket.
-- **Security:** bind `127.0.0.1` only, random free port, per-run random auth token required on every request (embedded in the opened URL).
+- **Security:** bind `127.0.0.1` only, random free port, per-run random auth token required on every `/api/*` request (embedded in the opened URL). Static SPA files are served without the token — sub-resource requests can't carry it, and the client code is not secret; the API is what the token protects.
 - **Preview SVGs:** `scripts/render-previews*` and `preview/` are dropped. README screenshots are a manual follow-up, out of scope.
 
 ## Architecture & lifecycle
@@ -46,9 +46,9 @@ Server pushes a **full snapshot** `{queue, seeds, history, config, activeFolder}
 
 Snapshots, not diffs — state is small, and reconnect (EventSource auto-reconnects) resyncs instantly for free.
 
-### Search — `GET /api/search?q=&category=` (SSE)
+### Search — `GET /api/search?q=` (SSE)
 
-One SSE stream per search. Emits one event per source as each answers — `{sourceId, items}` or `{sourceId, error}` — then a `done` event and closes. Empty `q` = curated browse, same as the TUI. Results carry magnets, so "copy magnet" (`y`) is client-side `navigator.clipboard` — no endpoint.
+One SSE stream per search. Emits one event per source as each answers — `{sourceId, items}` or `{sourceId, error}` — then a `done` event and closes. Empty `q` = curated browse, same as the TUI. No `category` param: the TUI's search hook always queries all sources and category filtering is client-side; that ports unchanged. Results carry magnets, so "copy magnet" (`y`) is client-side `navigator.clipboard` — no endpoint.
 
 ### Actions (POST, JSON in/out)
 
@@ -60,9 +60,10 @@ One SSE stream per search. Emits one event per source as each answers — `{sour
 | `/api/seeds/:key/pause` `/resume` `/remove` | `p` `c` in seeding |
 | `/api/config/throttle` `{downKbps?, upKbps?}` | `r` `u` |
 | `/api/config/trackers` `{urls}` | `t` |
-| `/api/config/folder` add / activate / remove | `o` picker |
-| `/api/fs/list?path=` → subdirectories | folder-picker browsing |
+| `/api/config/folder` `{action: "use" \| "remove", dir}` | `o` picker (activate and add are the same operation server-side) |
 | `/api/quit` | `q` |
+
+There is no filesystem-browsing endpoint: the TUI's FolderPrompt never browses the FS — it picks from the saved `downloadDirs` list and adds new folders by typed path, and the web port does the same.
 
 No in-app .torrent-file open is added — the TUI never had one (CLI arg only), and the CLI arg path stays.
 
@@ -75,14 +76,14 @@ Same regions and layout: sidebar (categories + downloads + seeding), content pan
 | Sidebar, Results, Downloads, Seeding, Panel, Footer, HelpOverlay, TabTitle, Rule, ErrorDetail | Port 1:1 — Ink `<Box>/<Text>` → `<div>/<span>` + CSS |
 | SearchBar, TextField | Native `<input>`; the hand-rolled cursor/editing code (~150 lines) is deleted |
 | ProgressBar, Spinner, sheen | CSS animations, same glyph look |
-| FolderPrompt, ThrottlePrompt, TrackersPrompt | Modal dialogs, same flows; FolderPrompt browses via `/api/fs/list` |
+| FolderPrompt, ThrottlePrompt, TrackersPrompt | Modal dialogs, same flows; FolderPrompt keeps its saved-list + typed-path picker |
 | Logo, logo.ts, theme.ts | Kept; theme colors become CSS custom properties |
 
 **Store.** Same `Store` shape, new backing: hooks read from one SSE-fed context (`useServerState`) instead of the in-process `DownloadQueue`; actions become `fetch` POSTs. Selection/region/focus state stays local React state and ports as-is. `sort.ts`, `move.ts`, `keymap.ts`, `format.ts` are reused **verbatim** (shared imports, including their tests).
 
 **Keyboard.** One `window` `keydown` dispatcher replicating App.tsx's `useInput` logic: same keys, same region and capture-mode rules. Keys are suppressed while an input or modal captures, exactly like the TUI's capture modes. Mouse added on top: click a row to select, click the sidebar to open a section, row buttons mirror the footer actions.
 
-**Style.** Monospace, dark, TUI palette from theme.ts, box-drawing-style borders in CSS. Fixed-ish desktop layout; no responsive/mobile work.
+**Style.** Monospace, dark, TUI palette from theme.ts, box-drawing-style borders in CSS. Fixed-ish desktop layout; no responsive/mobile work. The TUI's terminal-size plumbing (`listRows`, `compact`, `cols`, `rows`, `contentWidth`) is not ported — lists scroll with CSS and keep the selection visible with `scrollIntoView`.
 
 ## Build, packaging, tests
 
