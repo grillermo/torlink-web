@@ -185,6 +185,14 @@ body {
   flex: 0 0 2ch;
 }
 
+.sidebar-marker-selected {
+  color: var(--color-rule);
+}
+
+.sidebar-marker-selected-focused {
+  color: var(--color-bright);
+}
+
 .sidebar-badge {
   flex: 0 0 auto;
 }

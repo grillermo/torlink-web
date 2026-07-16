@@ -38,6 +38,12 @@ describe("Sidebar", () => {
     expect(view.getByRole("button", { name: "All" }).getAttribute("aria-current")).toBe("page");
   });
 
+  it("marks the focused selected indicator for its bright token treatment", () => {
+    const view = renderSidebar({ region: "sidebar" });
+    const marker = view.getByRole("button", { name: "All" }).querySelector(".sidebar-marker");
+    expect(marker?.classList.contains("sidebar-marker-selected-focused")).toBe(true);
+  });
+
   it("wraps sidebar keyboard movement from the first entry", () => {
     const { store } = renderSidebar();
     fireEvent.keyDown(window, { key: "ArrowUp" });

@@ -82,7 +82,12 @@ export function Sidebar() {
                 onClick={() => select(item.key)}
                 type="button"
               >
-                <span className="sidebar-marker" aria-hidden="true">{selected ? ICON.bar : ""}</span>
+                <span
+                  className={`sidebar-marker${selected ? " sidebar-marker-selected" : ""}${selected && focused ? " sidebar-marker-selected-focused" : ""}`}
+                  aria-hidden="true"
+                >
+                  {selected ? ICON.bar : ""}
+                </span>
                 <span>{item.label}</span>
                 {count > 0 ? <span className="dim sidebar-badge">{` (${count})`}</span> : null}
               </button>
