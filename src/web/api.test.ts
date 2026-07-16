@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getToken, apiUrl, post } from "./api";
+
+beforeEach(() => {
+  window.history.replaceState(null, "", "/");
+  sessionStorage.clear();
+  vi.unstubAllGlobals();
+});
 
 describe("api token plumbing", () => {
   it("reads the token from the query string and caches it", () => {
@@ -11,6 +17,22 @@ describe("api token plumbing", () => {
     expect(getToken()).toBe("abc123"); // from sessionStorage now
     expect(apiUrl("/api/quit")).toBe("/api/quit?token=abc123");
     expect(apiUrl("/api/search?q=x")).toBe("/api/search?q=x&token=abc123");
+  });
+
+  it("replaces existing tokens and preserves query parameters and hashes", () => {
+    window.history.replaceState(null, "", "/?token=fresh");
+
+    expect(apiUrl("/api/search?q=x&token=stale&sort=seeders#results")).toBe(
+      "/api/search?q=x&token=fresh&sort=seeders#results",
+    );
+    expect(apiUrl("/api/quit#done")).toBe("/api/quit?token=fresh#done");
+  });
+
+  it("falls back to the cached token when the query token is empty", () => {
+    sessionStorage.setItem("torlink-token", "cached");
+    window.history.replaceState(null, "", "/?token=");
+
+    expect(getToken()).toBe("cached");
   });
 });
 

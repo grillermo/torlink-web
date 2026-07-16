@@ -10,7 +10,9 @@ export function getToken(): string {
 }
 
 export function apiUrl(path: string): string {
-  return `${path}${path.includes("?") ? "&" : "?"}token=${encodeURIComponent(getToken())}`;
+  const url = new URL(path, window.location.origin);
+  url.searchParams.set("token", getToken());
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 export interface ActionResponse {

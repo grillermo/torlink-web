@@ -52,6 +52,33 @@ function idleState(): ConcurrentSearchState {
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function isKnownSourceId(
+  value: unknown,
+  perSource: Record<SourceId, SourceState>,
+): value is SourceId {
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(perSource, value);
+}
+
+function isTorrentResult(
+  value: unknown,
+  perSource: Record<SourceId, SourceState>,
+): value is TorrentResult {
+  if (!isRecord(value)) return false;
+  return typeof value.infoHash === "string"
+    && typeof value.name === "string"
+    && typeof value.sizeBytes === "number"
+    && typeof value.seeders === "number"
+    && typeof value.leechers === "number"
+    && isKnownSourceId(value.source, perSource)
+    && typeof value.magnet === "string"
+    && (value.numFiles === undefined || typeof value.numFiles === "number")
+    && (value.added === undefined || typeof value.added === "number");
+}
+
 export function useConcurrentSearch(query: string): ConcurrentSearchState {
   const [state, setState] = useState<ConcurrentSearchState>(idleState);
 
@@ -84,23 +111,23 @@ export function useConcurrentSearch(query: string): ConcurrentSearchState {
     es.addEventListener("source", (e) => {
       if (!alive) return;
       try {
-        const data = JSON.parse((e as MessageEvent).data) as {
-          sourceId?: unknown;
-          items?: unknown;
-          error?: unknown;
-          code?: unknown;
-        };
-        if (typeof data.sourceId !== "string" || !(data.sourceId in per)) return;
-        const sourceId = data.sourceId as SourceId;
-        const items = Array.isArray(data.items) ? data.items as TorrentResult[] : [];
+        const data = JSON.parse((e as MessageEvent).data) as unknown;
+        if (!isRecord(data) || !isKnownSourceId(data.sourceId, per)) return;
+        const sourceId = data.sourceId;
+        if (settled.has(sourceId)) return;
         if (typeof data.error === "string") {
+          if (typeof data.code !== "string") return;
           per[sourceId] = {
             loading: false,
             error: data.error,
-            code: typeof data.code === "string" ? data.code : null,
+            code: data.code,
             count: 0,
           };
         } else {
+          if (!Array.isArray(data.items) || !data.items.every((item) => isTorrentResult(item, per))) {
+            return;
+          }
+          const items = data.items;
           collected.push(...items);
           per[sourceId] = { loading: false, error: null, code: null, count: items.length };
         }
