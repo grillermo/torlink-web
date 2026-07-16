@@ -9,6 +9,8 @@ import {
 import { extname, resolve, sep } from "node:path";
 import type { SourceId } from "../sources/types";
 import type { Core } from "./core";
+import { snapshot } from "./state";
+import { sendSse, startSse } from "./sse";
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -198,6 +200,32 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
     if (req.method === "POST" && pathname === "/api/quit") {
       res.once("finish", opts.onQuit);
       sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    if (req.method === "GET" && pathname === "/api/events") {
+      startSse(res);
+      sendSse(res, "state", snapshot(opts.core.queue, opts.core.config));
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      let closed = false;
+      const onUpdate = (): void => {
+        if (timer || closed) return;
+        timer = setTimeout(() => {
+          timer = null;
+          if (!closed) sendSse(res, "state", snapshot(opts.core.queue, opts.core.config));
+        }, 500);
+      };
+      const onCompleted = (name: string): void => {
+        if (!closed) sendSse(res, "completed", { name });
+      };
+      opts.core.on("update", onUpdate);
+      opts.core.on("completed", onCompleted);
+      res.on("close", () => {
+        closed = true;
+        opts.core.off("update", onUpdate);
+        opts.core.off("completed", onCompleted);
+        if (timer) clearTimeout(timer);
+      });
       return;
     }
 

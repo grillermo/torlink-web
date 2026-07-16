@@ -115,3 +115,48 @@ describe("torlink http server", () => {
     expect(ctx.quits).toBe(1);
   });
 });
+
+async function readEvents(
+  base: string,
+  token: string,
+  path: string,
+  count: number,
+  act?: () => void,
+): Promise<{ event: string; data: unknown }[]> {
+  const res = await fetch(`${base}${path}?token=${token}`);
+  expect(res.status).toBe(200);
+  const reader = res.body!.getReader();
+  const out: { event: string; data: unknown }[] = [];
+  let buf = "";
+  act?.();
+  while (out.length < count) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += new TextDecoder().decode(value);
+    let idx: number;
+    while ((idx = buf.indexOf("\n\n")) >= 0) {
+      const block = buf.slice(0, idx);
+      buf = buf.slice(idx + 2);
+      const event = /^event: (.*)$/m.exec(block)?.[1];
+      const data = /^data: (.*)$/m.exec(block)?.[1];
+      if (event && data) out.push({ event, data: JSON.parse(data) });
+    }
+  }
+  await reader.cancel();
+  return out;
+}
+
+describe("GET /api/events", () => {
+  it("sends an initial state snapshot and pushes on updates", async () => {
+    const { base, token, core } = await start();
+    core.setThrottle("download", "0");
+    const events = await readEvents(base, token, "/api/events", 2, () => {
+      core.setThrottle("download", "123");
+    });
+    expect(events[0]!.event).toBe("state");
+    const first = events[0]!.data as { config: { maxDownloadKbps: number } };
+    expect(first.config.maxDownloadKbps).toBe(0);
+    const second = events[1]!.data as { config: { maxDownloadKbps: number } };
+    expect(second.config.maxDownloadKbps).toBe(123);
+  });
+});
