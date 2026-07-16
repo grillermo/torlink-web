@@ -13,7 +13,7 @@ export function Splash() {
     <section
       className="col splash-content"
       onKeyDown={(event) => {
-        if (event.ctrlKey && event.key.toLowerCase() === "c") {
+        if (event.key === "Escape" || (event.ctrlKey && event.key.toLowerCase() === "c")) {
           event.preventDefault();
           quitAll();
         }
@@ -25,7 +25,6 @@ export function Splash() {
       <div className="splash-search">
         <SearchBar
           editing
-          onExitDown={quitAll}
           onSubmit={submitQuery}
           placeholder="Search or paste a magnet link…"
           value=""

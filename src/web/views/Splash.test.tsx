@@ -51,4 +51,10 @@ describe("Splash", () => {
     fireEvent.keyDown(input, { key: "c", ctrlKey: true });
     expect(store.quitAll).toHaveBeenCalledTimes(2);
   });
+
+  it("does not quit when SearchBar moves down", () => {
+    const { getByRole, store } = renderSplash();
+    fireEvent.keyDown(getByRole("textbox"), { key: "ArrowDown" });
+    expect(store.quitAll).not.toHaveBeenCalled();
+  });
 });
