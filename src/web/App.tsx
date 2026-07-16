@@ -3,7 +3,12 @@ import type { QueueItem } from "../download/types";
 import { parseMagnet } from "../sources/magnet";
 import type { SourceId } from "../sources/types";
 import { cleanText, truncate } from "../util/format";
+import { footerHints } from "../ui/keymap";
 import { post, type ActionResponse } from "./api";
+import { Footer } from "./components/Footer";
+import { Logo } from "./components/Logo";
+import { Rule } from "./components/Rule";
+import { TabTitle } from "./components/TabTitle";
 import { useServerState } from "./hooks/useServerState";
 import { handleGlobalKey } from "./keyboard";
 import {
@@ -249,11 +254,12 @@ export function App({ children }: { children?: ReactNode } = {}) {
   return (
     <StoreContext.Provider value={store}>
       <main className="app-shell" data-view="browser">
+        <TabTitle />
         <header className="logo-row">
-          <span>torlink</span>
+          <Logo />
           {noticeState.text ? <span className="notice" role="status">{noticeState.text}</span> : null}
         </header>
-        <div className="rule" />
+        <Rule width={80} />
         {overlay ? <section className="overlay-slot" data-overlay={overlay} /> : null}
         <div className="workbench" hidden={overlay !== null}>
           <aside className="sidebar-slot" data-region="sidebar" />
@@ -261,7 +267,9 @@ export function App({ children }: { children?: ReactNode } = {}) {
             {children}
           </section>
         </div>
-        <footer className="footer-slot" hidden={overlay !== null} />
+        <footer className="footer-slot" hidden={overlay !== null}>
+          <Footer hints={footerHints(region, section, downloadFocus, seedFocus)} />
+        </footer>
       </main>
     </StoreContext.Provider>
   );

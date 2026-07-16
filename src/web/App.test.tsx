@@ -112,6 +112,17 @@ describe("App state shell", () => {
     expect(view.getByTestId("store-state").textContent).toBe("failed.iso");
     expect(currentStore?.state).toBe(next);
   });
+
+  it("renders the primitive browser shell with contextual footer controls", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const view = hydrate();
+    openBrowser();
+
+    expect(view.getByLabelText("torlink")).toBeTruthy();
+    expect(view.getByRole("button", { name: "? Keys" })).toBeTruthy();
+    expect(document.title).toBe("torlink");
+    expect(consoleError).not.toHaveBeenCalled();
+  });
 });
 
 describe("App notices", () => {
