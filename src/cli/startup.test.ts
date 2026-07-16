@@ -18,34 +18,42 @@ describe("parsePort", () => {
 });
 
 describe("StartupLifecycle", () => {
-  it("defers the first termination until Core is available", () => {
+  it("exits immediately on the first termination while Core is booting", () => {
     const exit = vi.fn();
-    const suspend = vi.fn();
     const lifecycle = new StartupLifecycle(exit);
 
     lifecycle.terminate(0);
 
     expect(lifecycle.stopping).toBe(true);
-    expect(exit).not.toHaveBeenCalled();
-
-    lifecycle.setCore({ suspend });
-
-    expect(suspend).toHaveBeenCalledOnce();
-    expect(exit).toHaveBeenCalledWith(0);
-  });
-
-  it("forces exit on a repeated termination while Core is unavailable", () => {
-    const exit = vi.fn();
-    const lifecycle = new StartupLifecycle(exit);
-
-    lifecycle.terminate(0);
-    lifecycle.terminate(0);
-
     expect(exit).toHaveBeenCalledOnce();
     expect(exit).toHaveBeenCalledWith(0);
   });
 
-  it("suspends Core and closes the server once on startup failure", () => {
+  it("exits immediately on startup failure before Core is available", () => {
+    const exit = vi.fn();
+    const lifecycle = new StartupLifecycle(exit);
+
+    lifecycle.fail(1);
+
+    expect(lifecycle.stopping).toBe(true);
+    expect(exit).toHaveBeenCalledOnce();
+    expect(exit).toHaveBeenCalledWith(1);
+  });
+
+  it("suspends Core before exiting when the server is not yet available", () => {
+    const exit = vi.fn();
+    const suspend = vi.fn();
+    const lifecycle = new StartupLifecycle(exit);
+
+    lifecycle.setCore({ suspend });
+    lifecycle.terminate(0);
+
+    expect(suspend).toHaveBeenCalledOnce();
+    expect(exit).toHaveBeenCalledOnce();
+    expect(exit).toHaveBeenCalledWith(0);
+  });
+
+  it("ignores repeated signals, failures, and uncaught reentry", () => {
     const exit = vi.fn();
     const suspend = vi.fn();
     const close = vi.fn();
@@ -53,12 +61,29 @@ describe("StartupLifecycle", () => {
     lifecycle.setCore({ suspend });
     lifecycle.setServer({ close });
 
+    lifecycle.terminate(0);
     lifecycle.fail(1);
+    lifecycle.terminate(0);
     lifecycle.fail(1);
 
     expect(suspend).toHaveBeenCalledOnce();
     expect(close).toHaveBeenCalledOnce();
-    expect(exit).toHaveBeenCalledTimes(2);
-    expect(exit).toHaveBeenLastCalledWith(1);
+    expect(exit).toHaveBeenCalledOnce();
+    expect(exit).toHaveBeenCalledWith(0);
+  });
+
+  it("ignores Core and server setters after termination", () => {
+    const exit = vi.fn();
+    const suspend = vi.fn();
+    const close = vi.fn();
+    const lifecycle = new StartupLifecycle(exit);
+
+    lifecycle.terminate(0);
+    lifecycle.setCore({ suspend });
+    lifecycle.setServer({ close });
+
+    expect(suspend).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+    expect(exit).toHaveBeenCalledOnce();
   });
 });
