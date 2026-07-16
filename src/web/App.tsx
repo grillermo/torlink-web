@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { QueueItem } from "../download/types";
 import { parseMagnet } from "../sources/magnet";
 import type { SourceId } from "../sources/types";
@@ -24,8 +24,8 @@ function responseNotice(result: ActionResponse): string | null {
   return result.notice ?? result.error ?? null;
 }
 
-export function App() {
-  const { state, completed } = useServerState();
+export function App({ children }: { children?: ReactNode } = {}) {
+  const { state, completed, completedVersion } = useServerState();
   const [view, setView] = useState<View>("splash");
   const [query, setQuery] = useState("");
   const [section, setSection] = useState<Section>("all");
@@ -35,25 +35,49 @@ export function App() {
   const [seedFocus, setSeedFocus] = useState<SeedFocus | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const noticeSequence = useRef(0);
+  const [noticeState, setNoticeState] = useState<{ text: string | null; sequence: number }>({
+    text: null,
+    sequence: 0,
+  });
   const [errorItem, setErrorItem] = useState<QueueItem | null>(null);
   const [stopped, setStopped] = useState(false);
 
+  const reserveNotice = useCallback((): number => {
+    noticeSequence.current += 1;
+    return noticeSequence.current;
+  }, []);
+
+  const publishReservedNotice = useCallback((sequence: number, text: string | null): void => {
+    if (noticeSequence.current === sequence) setNoticeState({ text, sequence });
+  }, []);
+
+  const setNotice = useCallback((text: string | null): void => {
+    const sequence = reserveNotice();
+    setNoticeState({ text, sequence });
+  }, [reserveNotice]);
+
   useEffect(() => {
     if (completed) setNotice(`✓ ${truncate(cleanText(completed), 40)}`);
-  }, [completed]);
+  }, [completed, completedVersion, setNotice]);
 
   useEffect(() => {
-    if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(null), 4000);
+    if (!noticeState.text) return;
+    const { sequence } = noticeState;
+    const timer = window.setTimeout(() => {
+      setNoticeState((current) => current.sequence === sequence
+        ? { text: null, sequence }
+        : current);
+    }, 4000);
     return () => window.clearTimeout(timer);
-  }, [notice]);
+  }, [noticeState]);
 
   const runAction = useCallback(async (path: string, body?: unknown) => {
+    const sequence = reserveNotice();
     const result = await post(path, body);
-    setNotice(responseNotice(result));
+    publishReservedNotice(sequence, responseNotice(result));
     return result;
-  }, []);
+  }, [publishReservedNotice, reserveNotice]);
 
   const startDownload = useCallback((input: {
     id: string;
@@ -68,11 +92,24 @@ export function App() {
   }, [runAction]);
 
   const copyMagnet = useCallback((input: { name: string; magnet: string }) => {
-    void navigator.clipboard.writeText(input.magnet).then(
-      () => setNotice(`Copied magnet: ${truncate(cleanText(input.magnet), 60)}`),
-      () => setNotice(`Couldn't copy magnet for ${truncate(cleanText(input.name), 32)}.`),
-    );
-  }, []);
+    const sequence = reserveNotice();
+    void (async () => {
+      try {
+        const clipboard = navigator.clipboard;
+        if (typeof clipboard?.writeText !== "function") throw new Error("clipboard unavailable");
+        await clipboard.writeText(input.magnet);
+        publishReservedNotice(
+          sequence,
+          `Copied magnet: ${truncate(cleanText(input.magnet), 60)}`,
+        );
+      } catch {
+        publishReservedNotice(
+          sequence,
+          `Couldn't copy magnet for ${truncate(cleanText(input.name), 32)}.`,
+        );
+      }
+    })();
+  }, [publishReservedNotice, reserveNotice]);
 
   const submitQuery = useCallback((raw: string) => {
     const nextQuery = raw.trim();
@@ -91,15 +128,18 @@ export function App() {
   }, [section, startDownload]);
 
   const pasteFromClipboard = useCallback(async () => {
+    const sequence = reserveNotice();
     let text: string;
     try {
-      text = (await navigator.clipboard.readText()).trim();
+      const clipboard = navigator.clipboard;
+      if (typeof clipboard?.readText !== "function") throw new Error("clipboard unavailable");
+      text = (await clipboard.readText()).trim();
     } catch {
-      setNotice("Clipboard is empty.");
+      publishReservedNotice(sequence, "Clipboard is empty.");
       return;
     }
     if (!text) {
-      setNotice("Clipboard is empty.");
+      publishReservedNotice(sequence, "Clipboard is empty.");
       return;
     }
     const found = text.match(/magnet:\?xt=urn:btih:[^\s"'<>]+/i)?.[0];
@@ -109,8 +149,8 @@ export function App() {
       setView("browser");
       return;
     }
-    setNotice("No magnet link on the clipboard.");
-  }, [startDownload]);
+    publishReservedNotice(sequence, "No magnet link on the clipboard.");
+  }, [publishReservedNotice, reserveNotice, startDownload]);
 
   const submitFolder = useCallback((action: "use" | "remove", dir: string) => {
     setPrompt(null);
@@ -128,12 +168,15 @@ export function App() {
   }, [runAction]);
 
   const quitAll = useCallback(() => {
+    const sequence = reserveNotice();
     void post("/api/quit").then((result) => {
-      const message = responseNotice(result);
-      if (message) setNotice(message);
-      setStopped(true);
+      if (result.ok) {
+        setStopped(true);
+        return;
+      }
+      publishReservedNotice(sequence, responseNotice(result));
     });
-  }, []);
+  }, [publishReservedNotice, reserveNotice]);
 
   useEffect(() => {
     if (!state || view !== "browser") return;
@@ -177,11 +220,11 @@ export function App() {
     startDownload,
     copyMagnet,
     showError: setErrorItem,
-    notice,
+    notice: noticeState.text,
     setNotice,
     quitAll,
   } : null, [
-    captureMode, copyMagnet, downloadFocus, errorItem, notice, prompt, query, quitAll,
+    captureMode, copyMagnet, downloadFocus, errorItem, noticeState.text, prompt, query, quitAll,
     region, section, seedFocus, showHelp, startDownload, state, submitQuery, view,
   ]);
 
@@ -196,7 +239,7 @@ export function App() {
   if (view === "splash") {
     return (
       <StoreContext.Provider value={store}>
-        <main className="splash" data-view="splash">torlink</main>
+        <main className="splash" data-view="splash">torlink{children}</main>
       </StoreContext.Provider>
     );
   }
@@ -208,13 +251,15 @@ export function App() {
       <main className="app-shell" data-view="browser">
         <header className="logo-row">
           <span>torlink</span>
-          {notice ? <span className="notice" role="status">{notice}</span> : null}
+          {noticeState.text ? <span className="notice" role="status">{noticeState.text}</span> : null}
         </header>
         <div className="rule" />
         {overlay ? <section className="overlay-slot" data-overlay={overlay} /> : null}
         <div className="workbench" hidden={overlay !== null}>
           <aside className="sidebar-slot" data-region="sidebar" />
-          <section className="content-slot" data-region="content" data-section={section} />
+          <section className="content-slot" data-region="content" data-section={section}>
+            {children}
+          </section>
         </div>
         <footer className="footer-slot" hidden={overlay !== null} />
       </main>

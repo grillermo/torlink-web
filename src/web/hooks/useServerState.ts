@@ -2,9 +2,14 @@ import { useEffect, useState } from "react";
 import type { AppState } from "../../server/state";
 import { apiUrl } from "../api";
 
-export function useServerState(): { state: AppState | null; completed: string | null } {
+export function useServerState(): {
+  state: AppState | null;
+  completed: string | null;
+  completedVersion: number;
+} {
   const [state, setState] = useState<AppState | null>(null);
   const [completed, setCompleted] = useState<string | null>(null);
+  const [completedVersion, setCompletedVersion] = useState(0);
 
   useEffect(() => {
     const es = new EventSource(apiUrl("/api/events"));
@@ -18,7 +23,10 @@ export function useServerState(): { state: AppState | null; completed: string | 
     es.addEventListener("completed", (e) => {
       try {
         const data = JSON.parse((e as MessageEvent).data) as { name?: unknown };
-        if (typeof data.name === "string") setCompleted(data.name);
+        if (typeof data.name === "string") {
+          setCompleted(data.name);
+          setCompletedVersion((version) => version + 1);
+        }
       } catch {
         // Ignore malformed event data.
       }
@@ -26,5 +34,5 @@ export function useServerState(): { state: AppState | null; completed: string | 
     return () => es.close();
   }, []);
 
-  return { state, completed };
+  return { state, completed, completedVersion };
 }

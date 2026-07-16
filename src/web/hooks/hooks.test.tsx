@@ -101,6 +101,11 @@ describe("useServerState", () => {
     expect(result.current.completed).toBeNull();
     act(() => stream.emit("completed", { name: "finished.iso" }));
     expect(result.current.completed).toBe("finished.iso");
+    expect(result.current.completedVersion).toBe(1);
+
+    act(() => stream.emit("completed", { name: "finished.iso" }));
+    expect(result.current.completed).toBe("finished.iso");
+    expect(result.current.completedVersion).toBe(2);
 
     unmount();
     expect(stream.closed).toBe(true);

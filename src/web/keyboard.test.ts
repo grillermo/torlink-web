@@ -22,8 +22,12 @@ function deps(over: Partial<KeyDeps> = {}): KeyDeps {
   };
 }
 
-function key(k: string, target?: Partial<EventTarget & { tagName: string }>): KeyboardEvent {
-  const e = new KeyboardEvent("keydown", { key: k, cancelable: true });
+function key(
+  k: string,
+  target?: Partial<EventTarget & { tagName: string }>,
+  init: KeyboardEventInit = {},
+): KeyboardEvent {
+  const e = new KeyboardEvent("keydown", { key: k, cancelable: true, ...init });
   if (target) Object.defineProperty(e, "target", { value: target });
   return e;
 }
@@ -59,6 +63,74 @@ describe("handleGlobalKey", () => {
     const d = deps();
     handleGlobalKey(key("q", { tagName: "INPUT" }), d);
     expect(d.quitAll).not.toHaveBeenCalled();
+  });
+
+  it("ignores textarea and composing input", () => {
+    const textarea = deps();
+    handleGlobalKey(key("q", { tagName: "TEXTAREA" }), textarea);
+    expect(textarea.quitAll).not.toHaveBeenCalled();
+
+    const composing = deps();
+    const event = key("q");
+    Object.defineProperty(event, "isComposing", { value: true });
+    handleGlobalKey(event, composing);
+    expect(composing.quitAll).not.toHaveBeenCalled();
+  });
+
+  it("lets an open prompt own all input", () => {
+    const d = deps({ editingPrompt: true, errorItem: {}, showHelp: true });
+    const event = key("q");
+    handleGlobalKey(event, d);
+    expect(d.clearErrorItem).not.toHaveBeenCalled();
+    expect(d.setShowHelp).not.toHaveBeenCalled();
+    expect(d.quitAll).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("dismisses an error before help", () => {
+    const d = deps({ errorItem: {}, showHelp: true });
+    handleGlobalKey(key("x"), d);
+    expect(d.clearErrorItem).toHaveBeenCalledOnce();
+    expect(d.setShowHelp).not.toHaveBeenCalled();
+  });
+
+  it("leaves Ctrl+C to the browser", () => {
+    const d = deps();
+    const event = key("c", undefined, { ctrlKey: true });
+    handleGlobalKey(event, d);
+    expect(d.quitAll).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("prevents browser defaults only for handled keys", () => {
+    const d = deps();
+    const tab = key("Tab");
+    handleGlobalKey(tab, d);
+    expect(tab.defaultPrevented).toBe(true);
+
+    const unknown = key("z");
+    handleGlobalKey(unknown, d);
+    expect(unknown.defaultPrevented).toBe(false);
+  });
+
+  it.each([
+    ["ArrowRight", "sidebar", "content"],
+    ["l", "sidebar", "content"],
+    ["ArrowLeft", "content", "sidebar"],
+    ["h", "content", "sidebar"],
+  ] as const)("%s moves %s to %s", (pressed, from, to) => {
+    const d = deps({ region: from });
+    handleGlobalKey(key(pressed), d);
+    expect(d.setRegion).toHaveBeenCalledWith(to);
+  });
+
+  it("captureMode esc owns Escape while preventing its browser default", () => {
+    const d = deps({ captureMode: "esc" });
+    const event = key("Escape");
+    handleGlobalKey(event, d);
+    expect(event.defaultPrevented).toBe(true);
+    expect(d.setRegion).not.toHaveBeenCalled();
+    expect(d.setView).not.toHaveBeenCalled();
   });
 
   it("prompt-open keys and paste dispatch", () => {
