@@ -29,11 +29,13 @@ describe("ProgressBar", () => {
     expect(view.container.textContent).toBe("░░░░");
   });
 
-  it("retains an explicitly supplied paused color on filled cells", () => {
+  it("retains an arbitrary paused color through the fallback class and custom property", () => {
     const view = render(<ProgressBar pct={50} width={4} color="#7c7785" />);
 
     for (const cell of view.container.querySelectorAll<HTMLElement>(".bar-cell")) {
-      expect(cell.style.color).toBe("rgb(124, 119, 133)");
+      expect(cell.classList.contains("bar-color-custom")).toBe(true);
+      expect(cell.style.getPropertyValue("--bar-color")).toBe("#7c7785");
+      expect(cell.style.color).toBe("");
     }
   });
 });

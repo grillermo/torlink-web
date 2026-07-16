@@ -104,6 +104,7 @@ body {
   color: color-mix(in oklch, currentcolor 72%, var(--color-bg));
 }
 
+.bar-color-custom { color: var(--bar-color); }
 .bar-sheen-low { color: color-mix(in oklch, currentcolor 76%, var(--color-bright)); }
 .bar-sheen-mid { color: color-mix(in oklch, currentcolor 52%, var(--color-bright)); }
 .bar-sheen-peak { color: var(--color-text); }
