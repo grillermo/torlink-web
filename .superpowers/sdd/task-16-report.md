@@ -103,4 +103,50 @@ $ rtk npm run test -- src/web/components/FolderPrompt.test.tsx src/web/component
 $ rtk npm run typecheck
 > tsc --noEmit
  exit_code=0
+
+## Review fix: keep folder prompt open on refused removal
+
+The App-level regression exercises the real FolderPrompt → App callback → Store action → `/api/config/folder` path. A refused removal keeps the folder prompt mounted, preserves the selected active-folder cursor, and still displays the server notice.
+
+### TDD red
+
+```text
+$ rtk npm run test -- src/web/App.test.tsx
+> vitest run src/web/App.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ ❯ src/web/App.test.tsx (16 tests | 1 failed) 278ms
+     × keeps the folder prompt and selected cursor after refused removal 21ms
+ Test Files  1 failed (1)
+      Tests  1 failed | 15 passed (16)
+   Start at  15:18:23
+   Duration  993ms (transform 165ms, setup 0ms, import 280ms, tests 278ms, environment 311ms)
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+ FAIL  src/web/App.test.tsx > App actions > keeps the folder prompt and selected cursor after refused removal
+ AssertionError: expected null to be truthy
+ - Expected:
+ true
+ + Received:
+ null
+ ❯ src/web/App.test.tsx:232:69
+     230|     await act(async () => { await Promise.resolve(); });
+     231|
+     232|     expect(view.container.querySelector('[data-overlay="folder"]')).to…
+                                                                        ^
+ exit_code=1
 ```
+
+### Verification
+
+```text
+$ rtk npm run test -- src/web/App.test.tsx src/web/components/FolderPrompt.test.tsx src/web/components/TrackersPrompt.test.tsx src/web/components/ThrottlePrompt.test.tsx
+> vitest run src/web/App.test.tsx src/web/components/FolderPrompt.test.tsx src/web/components/TrackersPrompt.test.tsx src/web/components/ThrottlePrompt.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ Test Files  4 passed (4)
+      Tests  27 passed (27)
+   Start at  15:18:35
+   Duration  1.02s (transform 370ms, setup 0ms, tests 376ms, environment 1.28s)
+> tsc --noEmit
+exit_code=0
+```
+
+`submitFolder` now closes the prompt only after a successful folder action. Refused actions retain the prompt and cursor while `runAction` continues to publish the existing notice.

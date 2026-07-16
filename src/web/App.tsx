@@ -194,8 +194,9 @@ export function App({ children }: { children?: ReactNode } = {}) {
   }, [publishReservedNotice, reserveNotice, startDownload]);
 
   const submitFolder = useCallback((action: "use" | "remove", dir: string) => {
-    setPrompt(null);
-    void runAction("/api/config/folder", { action, dir });
+    void runAction("/api/config/folder", { action, dir }).then((result) => {
+      if (result.ok) setPrompt(null);
+    });
   }, [runAction]);
 
   const submitTrackers = useCallback((urls: string[]) => {

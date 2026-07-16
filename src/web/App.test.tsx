@@ -215,6 +215,25 @@ describe("App notices", () => {
 });
 
 describe("App actions", () => {
+  it("keeps the folder prompt and selected cursor after refused removal", async () => {
+    mocks.post.mockResolvedValueOnce({ ok: false, notice: "Can't remove the active folder." });
+    const state = {
+      ...baseState,
+      config: { ...baseState.config, downloadDirs: ["/downloads", "/other"] },
+    };
+    const view = hydrate(state);
+    openBrowser();
+
+    fireEvent.keyDown(window, { key: "o" });
+    expect(view.container.querySelector('[data-overlay="folder"]')).toBeTruthy();
+    fireEvent.keyDown(window, { key: "d" });
+    await act(async () => { await Promise.resolve(); });
+
+    expect(view.container.querySelector('[data-overlay="folder"]')).toBeTruthy();
+    expect(view.container.querySelector(".prompt-body > .accent")?.textContent).toContain("/downloads");
+    expect(view.getByRole("status").textContent).toBe("Can't remove the active folder.");
+  });
+
   it("posts the exact download payload through the Store action", () => {
     hydrate();
     const input = {
