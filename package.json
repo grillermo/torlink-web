@@ -7,8 +7,7 @@
     "torlnk": "./dist/cli.cjs"
   },
   "files": [
-    "dist",
-    "preview"
+    "dist"
   ],
   "engines": {
     "node": ">=22"
@@ -22,7 +21,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "verify:seeding": "tsx scripts/verify-seeding.ts",
-    "previews": "tsx scripts/render-previews.tsx",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -35,10 +33,8 @@
     "p2p",
     "webtorrent",
     "seeding",
-    "tui",
-    "terminal",
     "cli",
-    "ink",
+    "web",
     "zero-configuration",
     "zero-setup",
     "fitgirl"
@@ -58,9 +54,7 @@
   },
   "dependencies": {
     "env-paths": "^4.0.0",
-    "ink": "^7.0.5",
     "parse-torrent": "^11.0.21",
-    "react": "^19.2.7",
     "webtorrent": "^2.4.1"
   },
   "devDependencies": {
@@ -69,8 +63,8 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.7.0",
-    "ink-testing-library": "^4.0.0",
     "jsdom": "^26.1.0",
+    "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tsup": "^8.5.1",
     "tsx": "^4.22.4",

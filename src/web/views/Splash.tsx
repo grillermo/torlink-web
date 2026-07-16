@@ -1,5 +1,5 @@
 import { sourcesByGroup } from "../../sources/registry";
-import { ICON } from "../../ui/theme";
+import { ICON } from "../theme";
 import { Logo } from "../components/Logo";
 import { SearchBar } from "../components/SearchBar";
 import { useStore } from "../store";

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { formatTrackers, parseTrackers } from "../../config/trackers";
-import { ICON } from "../../ui/theme";
+import { ICON } from "../theme";
 
 interface TrackersPromptProps {
   width: number;

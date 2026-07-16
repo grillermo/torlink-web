@@ -1,7 +1,7 @@
 import { type CSSProperties, useEffect } from "react";
 import { CATEGORIES, type Section, useStore } from "../store";
-import { wrapStep } from "../../ui/move";
-import { GUTTER, ICON } from "../../ui/theme";
+import { wrapStep } from "../move";
+import { GUTTER, ICON } from "../theme";
 
 interface NavItem {
   key: Section;

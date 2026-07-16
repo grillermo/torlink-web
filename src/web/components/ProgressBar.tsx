@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useState } from "react";
-import { COLOR } from "../../ui/theme";
-import { SHEEN_TICK_MS, sheenCenter, sheenIntensity, sheenPeriod } from "../../ui/sheen";
+import { COLOR } from "../theme";
+import { SHEEN_TICK_MS, sheenCenter, sheenIntensity, sheenPeriod } from "../sheen";
 
 function tone(color: string): string | undefined {
   if (color === COLOR.good) return "good";

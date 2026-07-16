@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ICON } from "../../ui/theme";
+import { ICON } from "../theme";
 
 interface FolderPromptProps {
   width: number;

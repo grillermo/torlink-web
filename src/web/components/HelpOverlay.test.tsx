@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { HELP_GROUPS } from "../../ui/keymap";
+import { HELP_GROUPS } from "../keymap";
 import { HelpOverlay } from "./HelpOverlay";
 
 afterEach(cleanup);

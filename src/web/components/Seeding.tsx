@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { cleanText, formatBytes, formatBytesPerSec, truncate } from "../../util/format";
 import type { HistoryItem } from "../../download/history";
 import type { SeedItem } from "../../download/types";
-import { wrapStep } from "../../ui/move";
-import { ICON } from "../../ui/theme";
+import { wrapStep } from "../move";
+import { ICON } from "../theme";
 import { useStore } from "../store";
 import { Panel } from "./Panel";
 

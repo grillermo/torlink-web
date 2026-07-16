@@ -2,8 +2,8 @@
 import { readFileSync } from "node:fs";
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { COLOR } from "../../ui/theme";
-import { SHEEN_TICK_MS } from "../../ui/sheen";
+import { COLOR } from "../theme";
+import { SHEEN_TICK_MS } from "../sheen";
 import { ProgressBar } from "./ProgressBar";
 import { Spinner } from "./Spinner";
 

@@ -1,6 +1,6 @@
 import { cleanText } from "../../util/format";
 import type { QueueItem } from "../../download/types";
-import { ICON } from "../../ui/theme";
+import { ICON } from "../theme";
 
 export function ErrorDetail({ item }: { item: QueueItem }) {
   return (

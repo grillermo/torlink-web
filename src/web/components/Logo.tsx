@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { LOGO_LINES, LOGO_WIDTH, SPROUT_CELLS } from "../../ui/logo";
-import { SHEEN_TICK_MS, sheenCenter, sheenIntensity, sheenPeriod } from "../../ui/sheen";
+import { LOGO_LINES, LOGO_WIDTH, SPROUT_CELLS } from "../logo";
+import { SHEEN_TICK_MS, sheenCenter, sheenIntensity, sheenPeriod } from "../sheen";
 
 function sheenTone(factor: number): string {
   if (factor < 0.15) return "logo-sheen-top";

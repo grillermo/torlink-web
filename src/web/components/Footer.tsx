@@ -1,4 +1,4 @@
-import type { Hint } from "../../ui/keymap";
+import type { Hint } from "../keymap";
 
 function keyForHint(keys: string): string {
   if (keys === "↵") return "Enter";

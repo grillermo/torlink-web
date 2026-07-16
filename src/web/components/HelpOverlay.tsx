@@ -1,4 +1,4 @@
-import { HELP_GROUPS } from "../../ui/keymap";
+import { HELP_GROUPS } from "../keymap";
 
 export function HelpOverlay() {
   return (

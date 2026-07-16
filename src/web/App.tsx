@@ -3,7 +3,7 @@ import type { QueueItem } from "../download/types";
 import { parseMagnet } from "../sources/magnet";
 import type { SourceId } from "../sources/types";
 import { cleanText, truncate } from "../util/format";
-import { footerHints } from "../ui/keymap";
+import { footerHints } from "./keymap";
 import { post, type ActionResponse } from "./api";
 import { Footer } from "./components/Footer";
 import { Downloads } from "./components/Downloads";

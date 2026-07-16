@@ -1,4 +1,4 @@
-import { lerpHex } from "../src/ui/theme";
+import { lerpHex } from "../src/web/theme";
 import {
   SHEEN_PEAK,
   SHEEN_TICK_MS,
@@ -6,7 +6,7 @@ import {
   sheenIntensity,
   sheenLoopTicks,
   sheenPeriod,
-} from "../src/ui/sheen";
+} from "../src/web/sheen";
 
 export interface AnsiToSvgOptions {
   cols: number;
