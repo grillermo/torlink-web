@@ -8,6 +8,7 @@ import { post, type ActionResponse } from "./api";
 import { Footer } from "./components/Footer";
 import { Logo } from "./components/Logo";
 import { Rule } from "./components/Rule";
+import { Results } from "./components/Results";
 import { Sidebar } from "./components/Sidebar";
 import { TabTitle } from "./components/TabTitle";
 import { useServerState } from "./hooks/useServerState";
@@ -266,7 +267,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
         <div className="workbench" hidden={overlay !== null}>
           <aside className="sidebar-slot" data-region="sidebar"><Sidebar /></aside>
           <section className="content-slot" data-region="content" data-section={section}>
-            {children}
+            {children ?? <Results />}
           </section>
         </div>
         <footer className="footer-slot" hidden={overlay !== null}>
