@@ -2,6 +2,7 @@ import { sourcesByGroup } from "../../sources/registry";
 import { ICON } from "../theme";
 import { Logo } from "../components/Logo";
 import { SearchBar } from "../components/SearchBar";
+import { isPlainShortcut } from "../keyboard";
 import { useStore } from "../store";
 
 const CATEGORIES = sourcesByGroup().map((group) => group.group.toLowerCase()).join(`  ${ICON.dot}  `);
@@ -13,7 +14,7 @@ export function Splash() {
     <section
       className="col splash-content"
       onKeyDown={(event) => {
-        if (event.key === "Escape" || (event.ctrlKey && event.key.toLowerCase() === "c")) {
+        if (event.key === "Escape" || (isPlainShortcut(event.nativeEvent) && event.key.toLowerCase() === "c")) {
           event.preventDefault();
           quitAll();
         }

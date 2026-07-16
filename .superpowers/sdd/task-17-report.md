@@ -211,6 +211,102 @@ $ rtk npm test -- src/web/views/Splash.test.tsx
 
 Exit status: 0.
 
+## Final Splash shortcut fix
+
+Updated `Splash` to reuse `isPlainShortcut`: Escape still quits, plain `c`
+still invokes the app quit shortcut, and modified Ctrl/Cmd/Alt+C events remain
+native to the browser.
+
+### TDD red run
+
+```text
+$ rtk npm test -- src/web/views/Splash.test.tsx
+> vitest run src/web/views/Splash.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ ❯ src/web/views/Splash.test.tsx (7 tests | 2 failed) 103ms
+     × keeps Escape and the plain c quit shortcut reachable from the native input 10ms
+     × leaves modified c shortcuts native 11ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed (7)
+   Start at  17:12:09
+   Duration  748ms
+```
+
+Exit status: 1 (expected red run).
+
+### TDD green and verification
+
+```text
+$ rtk npm test -- src/web/views/Splash.test.tsx
+> vitest run src/web/views/Splash.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  17:12:46
+   Duration  710ms (transform 88ms, setup 0ms, import 182ms, tests 94ms, environment 293ms)
+```
+
+```text
+$ rtk npm test
+> vitest run
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ Test Files  39 passed (39)
+      Tests  246 passed (246)
+   Start at  17:12:47
+   Duration  4.53s (transform 1.39s, setup 0ms, import 5.46s, tests 6.74s, environment 7.55s)
+```
+
+```text
+$ rtk npm run typecheck
+> tsc --noEmit
+```
+
+Exit status: 0.
+
+```text
+$ rtk npm run build
+> tsup && vite build
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /Users/grillermo/c/torlink/.worktrees/feat-web-ui/tsup.config.ts
+CLI Target: node22
+CLI Cleaning output folder
+ESM Build start
+ESM dist/index.js 36.89 KB
+ESM ⚡️ Build success in 46ms
+vite v6.4.3 building for production...
+transforming...
+✓ 72 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/web/index.html                   0.44 kB │ gzip:  0.27 kB
+../../dist/web/assets/index-BAR8PS-C.css    8.98 kB │ gzip:  2.45 kB
+../../dist/web/assets/index-CfXgSTvw.js   251.56 kB │ gzip: 78.82 kB
+✓ built in 544ms
+> node scripts/postbuild.cjs
+postbuild: wrote dist/cli.cjs
+```
+
+Exit status: 0.
+
+```text
+$ rtk proxy node dist/index.js --help
+torlink, local web app for torrent search
+
+usage
+  torlnk                      start torlink and open it in your browser
+  torlnk "magnet:?xt=..."     start a download on launch
+  torlnk path/to/file.torrent open a .torrent file on launch
+  torlnk --version            print the version
+
+once open: type to search every source at once, enter to run, arrows to move,
+d to download, ? for keys
+tip: quote magnet links (they contain & characters)
+```
+
+Exit status: 0.
+
 ## Modified browser shortcut guard
 
 Added `isPlainShortcut(event)` in `src/web/keyboard.ts`. It returns true only

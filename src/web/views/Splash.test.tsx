@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, createEvent, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AppState } from "../../server/state";
 import { Splash } from "./Splash";
@@ -44,12 +44,24 @@ describe("Splash", () => {
     expect(store.submitQuery).toHaveBeenNthCalledWith(2, "");
   });
 
-  it("keeps Escape and Ctrl+C quit shortcuts reachable from the native input", () => {
+  it("keeps Escape and the plain c quit shortcut reachable from the native input", () => {
     const { getByRole, store } = renderSplash();
     const input = getByRole("textbox");
     fireEvent.keyDown(input, { key: "Escape" });
-    fireEvent.keyDown(input, { key: "c", ctrlKey: true });
+    fireEvent.keyDown(input, { key: "c" });
     expect(store.quitAll).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    { ctrlKey: true },
+    { metaKey: true },
+    { altKey: true },
+  ])("leaves modified c shortcuts native", (init) => {
+    const { getByRole, store } = renderSplash();
+    const event = createEvent.keyDown(getByRole("textbox"), { key: "c", ...init });
+    fireEvent(getByRole("textbox"), event);
+    expect(store.quitAll).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
   });
 
   it("does not quit when SearchBar moves down", () => {
