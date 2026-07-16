@@ -6,6 +6,8 @@ import { cleanText, truncate } from "../util/format";
 import { footerHints } from "../ui/keymap";
 import { post, type ActionResponse } from "./api";
 import { Footer } from "./components/Footer";
+import { Downloads } from "./components/Downloads";
+import { ErrorDetail } from "./components/ErrorDetail";
 import { Logo } from "./components/Logo";
 import { Rule } from "./components/Rule";
 import { Results } from "./components/Results";
@@ -97,6 +99,28 @@ export function App({ children }: { children?: ReactNode } = {}) {
     void runAction("/api/downloads", input);
     setSection("downloads");
     setRegion("content");
+  }, [runAction]);
+
+  const cancelDownload = useCallback((id: string) => {
+    void runAction(`/api/downloads/${encodeURIComponent(id)}/cancel`);
+  }, [runAction]);
+
+  const toggleDownload = useCallback((id: string, action: "pause" | "resume") => {
+    void runAction(`/api/downloads/${encodeURIComponent(id)}/${action}`);
+  }, [runAction]);
+
+  const retryFailed = useCallback(() => {
+    for (const item of state?.queue ?? []) {
+      if (item.status === "failed") void runAction(`/api/downloads/${encodeURIComponent(item.id)}/retry`);
+    }
+  }, [runAction, state?.queue]);
+
+  const removeHistory = useCallback((id: string) => {
+    void runAction(`/api/history/${encodeURIComponent(id)}/delete`);
+  }, [runAction]);
+
+  const clearHistory = useCallback(() => {
+    void runAction("/api/history/clear");
   }, [runAction]);
 
   const copyMagnet = useCallback((input: { name: string; magnet: string }) => {
@@ -226,14 +250,20 @@ export function App({ children }: { children?: ReactNode } = {}) {
     seedFocus,
     setSeedFocus,
     startDownload,
+    cancelDownload,
+    toggleDownload,
+    retryFailed,
+    removeHistory,
+    clearHistory,
     copyMagnet,
     showError: setErrorItem,
     notice: noticeState.text,
     setNotice,
     quitAll,
   } : null, [
-    captureMode, copyMagnet, downloadFocus, errorItem, noticeState.text, prompt, query, quitAll,
-    region, section, seedFocus, showHelp, startDownload, state, submitQuery, view,
+    cancelDownload, captureMode, clearHistory, copyMagnet, downloadFocus, errorItem, noticeState.text,
+    prompt, query, quitAll, region, removeHistory, retryFailed, section, seedFocus, showHelp,
+    startDownload, state, submitQuery, toggleDownload, view,
   ]);
 
   if (stopped) {
@@ -263,11 +293,11 @@ export function App({ children }: { children?: ReactNode } = {}) {
           {noticeState.text ? <span className="notice" role="status">{noticeState.text}</span> : null}
         </header>
         <Rule width={80} />
-        {overlay ? <section className="overlay-slot" data-overlay={overlay} /> : null}
+        {overlay ? <section className="overlay-slot" data-overlay={overlay}>{errorItem ? <ErrorDetail item={errorItem} /> : null}</section> : null}
         <div className="workbench" hidden={overlay !== null}>
           <aside className="sidebar-slot" data-region="sidebar"><Sidebar /></aside>
           <section className="content-slot" data-region="content" data-section={section}>
-            {children ?? <Results />}
+            {children ?? (section === "downloads" ? <Downloads /> : <Results />)}
           </section>
         </div>
         <footer className="footer-slot" hidden={overlay !== null}>

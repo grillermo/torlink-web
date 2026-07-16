@@ -27,7 +27,7 @@ const store: Store = {
   config: state.config, state, view: "browser", setView: () => {}, query: "", submitQuery: () => {},
   section: "all", setSection: () => {}, region: "content", setRegion: () => {},
   captureMode: "none", setCaptureMode: () => {}, downloadFocus: null, setDownloadFocus: () => {},
-  seedFocus: null, setSeedFocus: () => {}, startDownload: () => {}, copyMagnet: () => {},
+  seedFocus: null, setSeedFocus: () => {}, startDownload: () => {}, cancelDownload: () => {}, toggleDownload: () => {}, retryFailed: () => {}, removeHistory: () => {}, clearHistory: () => {}, copyMagnet: () => {},
   showError: () => {}, notice: null, setNotice: () => {}, quitAll: () => {},
 };
 

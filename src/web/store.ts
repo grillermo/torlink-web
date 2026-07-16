@@ -37,6 +37,11 @@ export interface Store {
   downloadFocus: DownloadFocus | null; setDownloadFocus(f: DownloadFocus | null): void;
   seedFocus: SeedFocus | null; setSeedFocus(f: SeedFocus | null): void;
   startDownload(input: { id: string; name: string; magnet: string; source?: SourceId; sizeBytes?: number }): void;
+  cancelDownload(id: string): void;
+  toggleDownload(id: string, action: "pause" | "resume"): void;
+  retryFailed(): void;
+  removeHistory(id: string): void;
+  clearHistory(): void;
   copyMagnet(input: { name: string; magnet: string }): void;
   showError(item: QueueItem): void;
   notice: string | null; setNotice(s: string | null): void;

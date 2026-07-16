@@ -16,7 +16,7 @@ function renderSearchBar(props: Partial<ComponentProps<typeof SearchBar>> = {}) 
     config: state.config, state, view: "browser", setView: vi.fn(), query: "", submitQuery: vi.fn(),
     section: "all", setSection: vi.fn(), region: "content", setRegion: vi.fn(),
     captureMode: "none", setCaptureMode: vi.fn(), downloadFocus: null, setDownloadFocus: vi.fn(),
-    seedFocus: null, setSeedFocus: vi.fn(), startDownload: vi.fn(), copyMagnet: vi.fn(),
+    seedFocus: null, setSeedFocus: vi.fn(), startDownload: vi.fn(), cancelDownload: vi.fn(), toggleDownload: vi.fn(), retryFailed: vi.fn(), removeHistory: vi.fn(), clearHistory: vi.fn(), copyMagnet: vi.fn(),
     showError: vi.fn(), notice: null, setNotice: vi.fn(), quitAll: vi.fn(),
   };
   const defaults = { width: 40, value: "initial", editing: true, onSubmit: vi.fn() };

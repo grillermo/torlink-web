@@ -15,7 +15,7 @@ function renderSplash() {
     config: state.config, state, view: "splash", setView: vi.fn(), query: "", submitQuery: vi.fn(),
     section: "all", setSection: vi.fn(), region: "content", setRegion: vi.fn(),
     captureMode: "none", setCaptureMode: vi.fn(), downloadFocus: null, setDownloadFocus: vi.fn(),
-    seedFocus: null, setSeedFocus: vi.fn(), startDownload: vi.fn(), copyMagnet: vi.fn(),
+    seedFocus: null, setSeedFocus: vi.fn(), startDownload: vi.fn(), cancelDownload: vi.fn(), toggleDownload: vi.fn(), retryFailed: vi.fn(), removeHistory: vi.fn(), clearHistory: vi.fn(), copyMagnet: vi.fn(),
     showError: vi.fn(), notice: null, setNotice: vi.fn(), quitAll: vi.fn(),
   };
   return { ...render(<StoreContext.Provider value={store}><Splash /></StoreContext.Provider>), store };

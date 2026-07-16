@@ -301,6 +301,65 @@ body {
   margin: 1lh var(--space-0) var(--space-0);
 }
 
+.downloads-view {
+  min-width: 0;
+}
+
+.downloads-list {
+  gap: var(--space-3xs);
+  overflow: auto;
+}
+
+.download-row {
+  display: grid;
+  grid-template-columns: 2ch 2ch minmax(0, 1fr) 10ch 5ch;
+  gap: 1ch;
+  border: 0;
+  padding: var(--space-0);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+}
+
+.download-row:hover,
+.download-row.selected {
+  color: var(--color-text);
+}
+
+.download-progress {
+  grid-column: 3;
+}
+
+.download-progress + .trunc {
+  grid-column: 4 / -1;
+}
+
+.download-recent-title {
+  margin-top: 1lh;
+}
+
+.download-recent-row {
+  grid-template-columns: 2ch 2ch minmax(0, 1fr) 10ch 12ch 5ch;
+}
+
+.download-paused .bar-cell {
+  --bar-base-color: var(--color-rule);
+}
+
+.error-detail {
+  width: min(88ch, calc(100% - var(--space-sm)));
+  margin: var(--space-sm) auto;
+  border: var(--rule-thin) solid var(--color-bad);
+  padding: var(--space-sm);
+}
+
+.error-detail p {
+  margin: var(--space-sm) var(--space-0) var(--space-0);
+}
+
 .content-slot {
   min-width: 0;
   flex: 1;
