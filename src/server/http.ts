@@ -204,8 +204,6 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
     }
 
     if (req.method === "GET" && pathname === "/api/events") {
-      startSse(res);
-      sendSse(res, "state", snapshot(opts.core.queue, opts.core.config));
       let timer: ReturnType<typeof setTimeout> | null = null;
       let closed = false;
       const onUpdate = (): void => {
@@ -218,14 +216,22 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
       const onCompleted = (name: string): void => {
         if (!closed) sendSse(res, "completed", { name });
       };
-      opts.core.on("update", onUpdate);
-      opts.core.on("completed", onCompleted);
-      res.on("close", () => {
+      const cleanup = (): void => {
+        if (closed) return;
         closed = true;
         opts.core.off("update", onUpdate);
         opts.core.off("completed", onCompleted);
-        if (timer) clearTimeout(timer);
-      });
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      };
+      res.once("close", cleanup);
+      res.once("error", cleanup);
+      opts.core.on("update", onUpdate);
+      opts.core.on("completed", onCompleted);
+      startSse(res);
+      if (!closed) sendSse(res, "state", snapshot(opts.core.queue, opts.core.config));
       return;
     }
 
