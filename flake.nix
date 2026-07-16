@@ -1,5 +1,5 @@
 {
-  description = "Torlink is a torrent finder that lives in your terminal, with zero setup and nothing to configure.";
+  description = "Torlink is a zero-setup local web app for finding torrents, with nothing to configure.";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

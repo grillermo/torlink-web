@@ -144,4 +144,48 @@ Exact output:
 
 ```text
 (no matches)
+
+## Local web-app copy cleanup
+
+Updated stale user-facing terminal-native wording in the CLI help, splash
+screen, npm metadata, and Nix package metadata to describe torlink as a local
+web app. No unrelated CLI behavior or formatting was changed. The lockfile was
+not updated because its package metadata does not include the package
+description.
+
+### Verification
+
+Targeted stale-copy search over the owned files:
+
+```sh
+$ rtk proxy rg -n -i -e 'terminal-native' -e 'terminal native' -e 'lives in your terminal' -e 'right in your terminal' src/cli/args.ts src/web/views/Splash.tsx package.json flake.nix nix/package.nix || true
+```
+
+Exact output (no matches; exit status 0 because of `|| true`):
+
+```text
+```
+
+Broader stale-copy search, excluding generated files, the lockfile, and this
+report:
+
+```sh
+$ rtk proxy rg -n -i -e 'terminal-native' -e 'terminal native' -e 'lives in your terminal' -e 'right in your terminal' . --glob '!node_modules/**' --glob '!dist/**' --glob '!package-lock.json' --glob '!.superpowers/**' --glob '!.git/**' || true
+```
+
+Exact output (the remaining match is an existing test assertion outside this
+task's owned files; exit status 0 because of `|| true`):
+
+```text
+./src/web/views/Splash.test.tsx:30:    expect(view.getByText("A curated, terminal-native torrent downloader.")).toBeTruthy();
+```
+
+Typecheck:
+
+```sh
+$ rtk npm run typecheck
+> tsc --noEmit
+```
+
+Exit status 0.
 ```

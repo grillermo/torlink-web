@@ -20,7 +20,7 @@ export function Splash() {
       }}
     >
       <Logo />
-      <p className="splash-description">A curated, terminal-native torrent downloader.</p>
+      <p className="splash-description">A curated, local web app for torrent downloads.</p>
       <p className="dim splash-categories">{CATEGORIES}</p>
       <div className="splash-search">
         <SearchBar

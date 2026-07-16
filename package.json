@@ -1,7 +1,7 @@
 {
   "name": "torlnk",
   "version": "1.1.1",
-  "description": "A sleek, zero-setup torrent finder and downloader that lives right in your terminal.",
+  "description": "A sleek, zero-setup local web app for finding and downloading torrents.",
   "type": "module",
   "bin": {
     "torlnk": "./dist/cli.cjs"

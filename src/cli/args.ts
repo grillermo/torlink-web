@@ -15,7 +15,7 @@ export function parseCliArgs(argv: string[]): CliCommand {
   return { kind: "invalid", arg: a };
 }
 
-export const HELP_TEXT = `torlink, terminal-native torrent search
+export const HELP_TEXT = `torlink, local web app for torrent search
 
 usage
   torlnk                      start torlink and open it in your browser
