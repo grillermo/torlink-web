@@ -7,6 +7,7 @@ import { footerHints } from "../ui/keymap";
 import { post, type ActionResponse } from "./api";
 import { Footer } from "./components/Footer";
 import { Downloads } from "./components/Downloads";
+import { Seeding } from "./components/Seeding";
 import { ErrorDetail } from "./components/ErrorDetail";
 import { Logo } from "./components/Logo";
 import { Rule } from "./components/Rule";
@@ -121,6 +122,10 @@ export function App({ children }: { children?: ReactNode } = {}) {
 
   const clearHistory = useCallback(() => {
     void runAction("/api/history/clear");
+  }, [runAction]);
+
+  const toggleSeed = useCallback((id: string, action: "pause" | "resume") => {
+    void runAction(`/api/seeds/${encodeURIComponent(id)}/${action}`);
   }, [runAction]);
 
   const copyMagnet = useCallback((input: { name: string; magnet: string }) => {
@@ -255,6 +260,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
     retryFailed,
     removeHistory,
     clearHistory,
+    toggleSeed,
     copyMagnet,
     showError: setErrorItem,
     notice: noticeState.text,
@@ -263,7 +269,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
   } : null, [
     cancelDownload, captureMode, clearHistory, copyMagnet, downloadFocus, errorItem, noticeState.text,
     prompt, query, quitAll, region, removeHistory, retryFailed, section, seedFocus, showHelp,
-    startDownload, state, submitQuery, toggleDownload, view,
+    startDownload, state, submitQuery, toggleDownload, toggleSeed, view,
   ]);
 
   if (stopped) {
@@ -297,7 +303,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
         <div className="workbench" hidden={overlay !== null}>
           <aside className="sidebar-slot" data-region="sidebar"><Sidebar /></aside>
           <section className="content-slot" data-region="content" data-section={section}>
-            {children ?? (section === "downloads" ? <Downloads /> : <Results />)}
+            {children ?? (section === "downloads" ? <Downloads /> : section === "seeding" ? <Seeding /> : <Results />)}
           </section>
         </div>
         <footer className="footer-slot" hidden={overlay !== null}>

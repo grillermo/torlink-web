@@ -305,6 +305,47 @@ body {
   min-width: 0;
 }
 
+.seeding-view {
+  min-width: 0;
+}
+
+.seeding-list {
+  margin-top: 1lh;
+  overflow: auto;
+}
+
+.seeding-grid {
+  display: grid;
+  grid-template-columns: 2ch 2ch minmax(0, 1fr) 10ch 14ch 4ch;
+  gap: 1ch;
+  min-width: 0;
+  text-align: left;
+}
+
+.seeding-grid > :not(:nth-child(3)) {
+  text-align: right;
+}
+
+.seeding-head > :first-child,
+.seeding-head > :nth-child(2) {
+  text-align: left;
+}
+
+.seeding-row {
+  border: 0;
+  padding: var(--space-0);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+}
+
+.seeding-row:hover,
+.seeding-row.selected {
+  color: var(--color-text);
+}
+
 .downloads-list {
   gap: var(--space-3xs);
   overflow: auto;
