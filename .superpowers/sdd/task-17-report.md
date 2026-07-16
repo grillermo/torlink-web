@@ -113,3 +113,21 @@ Output (exit status 1; stdout is empty):
 - `npm run dev:server` starts the local API server on port 9877.
 - `npm run dev` starts the Vite React app from `src/web` and proxies `/api/` to the local API server.
 - `npm run build` builds the server and web bundles.
+
+## README tagline cleanup
+
+Updated the stale tagline in `README.md` to describe torlink as a local web app.
+No surrounding README copy was changed.
+
+### Targeted stale-TUI phrase search
+
+Command:
+
+```sh
+rtk grep -n -i -E 'lives in your terminal|terminal-native|\btui\b|\bink\b' README.md
+```
+
+Exact output (exit status 1; stdout is empty):
+
+```text
+```
