@@ -54,12 +54,12 @@ body {
   padding-inline: 1ch;
 }
 
-.accent { color: var(--color-accent); }
+.accent { color: var(--color-accent); --bar-base-color: var(--color-accent); }
 .alt { color: var(--color-alt); }
 .bright { color: var(--color-bright); }
-.good { color: var(--color-good); }
-.warn { color: var(--color-warn); }
-.bad { color: var(--color-bad); }
+.good { color: var(--color-good); --bar-base-color: var(--color-good); }
+.warn { color: var(--color-warn); --bar-base-color: var(--color-warn); }
+.bad { color: var(--color-bad); --bar-base-color: var(--color-bad); }
 .fg-rule { color: var(--color-rule); }
 
 .panel-title,
@@ -101,13 +101,13 @@ body {
 }
 
 .bar-cell {
-  color: color-mix(in oklch, currentcolor 72%, var(--color-bg));
+  color: color-mix(in oklch, var(--bar-base-color) 72%, var(--color-bg));
 }
 
-.bar-color-custom { color: var(--bar-color); }
-.bar-sheen-low { color: color-mix(in oklch, currentcolor 76%, var(--color-bright)); }
-.bar-sheen-mid { color: color-mix(in oklch, currentcolor 52%, var(--color-bright)); }
-.bar-sheen-peak { color: var(--color-text); }
+.bar-color-custom { --bar-base-color: var(--bar-color); }
+.bar-sheen-low { color: color-mix(in oklch, var(--bar-base-color) 76%, var(--color-bright)); }
+.bar-sheen-mid { color: color-mix(in oklch, var(--bar-base-color) 52%, var(--color-bright)); }
+.bar-sheen-peak { color: var(--color-bright); }
 
 .logo-sheen-top { color: var(--color-text); }
 .logo-sheen-bright { color: var(--color-bright); }
