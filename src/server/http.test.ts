@@ -1,10 +1,13 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ServerResponse, type Server } from "node:http";
-import { Core } from "./core";
-import { createToken, createTorlinkServer } from "./http";
+const stateDir = mkdtempSync(join(tmpdir(), "torlink-http-state-"));
+process.env.TORLINK_STATE_DIR = stateDir;
+const { Core } = await import("./core");
+const { createToken, createTorlinkServer } = await import("./http");
+type CoreInstance = Awaited<ReturnType<typeof Core.boot>>;
 
 const searchHarness = vi.hoisted(() => ({
   mode: "resolve" as "resolve" | "pending" | "deferred",
@@ -48,7 +51,7 @@ interface Ctx {
   base: string;
   token: string;
   server: Server;
-  core: Core;
+  core: CoreInstance;
   quits: number;
   webRoot: string;
 }
@@ -90,6 +93,10 @@ afterEach(async () => {
     ctx.core.suspend();
     rmSync(ctx.webRoot, { recursive: true, force: true });
   }
+});
+
+afterAll(() => {
+  rmSync(stateDir, { recursive: true, force: true });
 });
 
 describe("torlink http server", () => {
@@ -457,5 +464,54 @@ describe("GET /api/events", () => {
 
     expect(core.listenerCount("update")).toBe(updateListeners);
     expect(core.listenerCount("completed")).toBe(completedListeners);
+  });
+});
+
+describe("action routes", () => {
+  it("download lifecycle routes are tolerant of unknown ids", async () => {
+    const { base, token } = await start();
+    for (const action of ["pause", "resume", "cancel", "retry"]) {
+      const res = await fetch(`${base}/api/downloads/nope/${action}?token=${token}`, {
+        method: "POST",
+      });
+      expect(res.status).toBe(200);
+    }
+  });
+
+  it("throttle route validates direction and applies", async () => {
+    const { base, token, core } = await start();
+    const bad = await fetch(`${base}/api/config/throttle?token=${token}`, {
+      method: "POST",
+      body: JSON.stringify({ direction: "sideways", value: "5" }),
+    });
+    expect(bad.status).toBe(400);
+    const ok = await fetch(`${base}/api/config/throttle?token=${token}`, {
+      method: "POST",
+      body: JSON.stringify({ direction: "download", value: "250" }),
+    });
+    expect(ok.status).toBe(200);
+    expect((await ok.json() as { notice: string }).notice).toBe("Throttle: ↓ 250 KB/s");
+    expect(core.config.maxDownloadKbps).toBe(250);
+  });
+
+  it("trackers and folder routes round-trip through Core", async () => {
+    const { base, token, core } = await start();
+    const t = await fetch(`${base}/api/config/trackers?token=${token}`, {
+      method: "POST",
+      body: JSON.stringify({ urls: ["udp://x:1"] }),
+    });
+    expect((await t.json() as { notice: string }).notice).toBe("Saved 1 tracker.");
+    const f = await fetch(`${base}/api/config/folder?token=${token}`, {
+      method: "POST",
+      body: JSON.stringify({ action: "remove", dir: core.config.downloadDir }),
+    });
+    expect((await f.json() as { notice: string }).notice).toBe("Can't remove the active folder.");
+  });
+
+  it("seed resume 404s for an id with no history", async () => {
+    const { base, token } = await start();
+    const res = await fetch(`${base}/api/seeds/nope/resume?token=${token}`, { method: "POST" });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "unknown id" });
   });
 });

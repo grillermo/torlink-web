@@ -103,6 +103,18 @@ function isDownloadInput(body: unknown): body is ValidDownloadInput {
   );
 }
 
+function decodeActionId(value: string): string | undefined {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return undefined;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
 function serveStatic(res: ServerResponse, webRoot: string, pathname: string): void {
   if (!existsSync(webRoot)) {
     res.writeHead(503, { "content-type": "text/plain; charset=utf-8" });
@@ -194,6 +206,125 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
         source: typeof body.source === "string" ? body.source as SourceId : undefined,
         sizeBytes: typeof body.sizeBytes === "number" ? body.sizeBytes : undefined,
       });
+      sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    const dl = /^\/api\/downloads\/([^/]+)\/(pause|resume|cancel|retry)$/.exec(pathname);
+    if (req.method === "POST" && dl) {
+      const id = decodeActionId(dl[1]!);
+      if (id === undefined) {
+        sendJson(res, 400, { error: "invalid input" });
+        return;
+      }
+      const actions = { pause: "pause", resume: "resume", cancel: "cancel", retry: "retry" } as const;
+      opts.core.queue[actions[dl[2] as keyof typeof actions]](id);
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    const history = /^\/api\/history\/([^/]+)\/delete$/.exec(pathname);
+    if (req.method === "POST" && history) {
+      const id = decodeActionId(history[1]!);
+      if (id === undefined) {
+        sendJson(res, 400, { error: "invalid input" });
+        return;
+      }
+      opts.core.queue.removeHistory(id);
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    if (req.method === "POST" && pathname === "/api/history/clear") {
+      opts.core.queue.clearHistory();
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    const seed = /^\/api\/seeds\/([^/]+)\/(resume|pause|remove)$/.exec(pathname);
+    if (req.method === "POST" && seed) {
+      const id = decodeActionId(seed[1]!);
+      if (id === undefined) {
+        sendJson(res, 400, { error: "invalid input" });
+        return;
+      }
+      const action = seed[2]!;
+      if (action === "resume") {
+        const historyItem = opts.core.queue.getHistory().find((item) => item.id === id);
+        if (!historyItem) {
+          sendJson(res, 404, { error: "unknown id" });
+          return;
+        }
+        opts.core.queue.startSeeding(historyItem);
+      } else if (action === "pause") {
+        opts.core.queue.stopSeeding(id);
+      } else {
+        opts.core.queue.removeHistory(id);
+      }
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
+    if (req.method === "POST" && pathname === "/api/config/throttle") {
+      let body: unknown;
+      try {
+        body = await readJson(req);
+      } catch (error) {
+        if (error instanceof PayloadTooLargeError) {
+          sendJson(res, 413, { error: "payload too large" });
+          return;
+        }
+        throw error;
+      }
+      if (!isRecord(body) || (body.direction !== "download" && body.direction !== "upload")
+        || typeof body.value !== "string") {
+        sendJson(res, 400, { error: "invalid input" });
+        return;
+      }
+      const result = opts.core.setThrottle(body.direction, body.value);
+      sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (req.method === "POST" && pathname === "/api/config/trackers") {
+      let body: unknown;
+      try {
+        body = await readJson(req);
+      } catch (error) {
+        if (error instanceof PayloadTooLargeError) {
+          sendJson(res, 413, { error: "payload too large" });
+          return;
+        }
+        throw error;
+      }
+      if (!isRecord(body) || !Array.isArray(body.urls) || !body.urls.every((url) => typeof url === "string")) {
+        sendJson(res, 400, { error: "invalid input" });
+        return;
+      }
+      const result = opts.core.setTrackers(body.urls);
+      sendJson(res, result.ok ? 200 : 400, result);
+      return;
+    }
+
+    if (req.method === "POST" && pathname === "/api/config/folder") {
+      let body: unknown;
+      try {
+        body = await readJson(req);
+      } catch (error) {
+        if (error instanceof PayloadTooLargeError) {
+          sendJson(res, 413, { error: "payload too large" });
+          return;
+        }
+        throw error;
+      }
+      if (!isRecord(body) || (body.action !== "use" && body.action !== "remove")
+        || typeof body.dir !== "string") {
+        sendJson(res, 400, { error: "invalid input" });
+        return;
+      }
+      const result = body.action === "use"
+        ? await opts.core.useFolder(body.dir)
+        : opts.core.removeFolder(body.dir);
       sendJson(res, result.ok ? 200 : 400, result);
       return;
     }
