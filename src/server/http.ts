@@ -9,6 +9,7 @@ import {
 import { extname, resolve, sep } from "node:path";
 import type { SourceId } from "../sources/types";
 import type { Core } from "./core";
+import { runSearchSse } from "./search";
 import { snapshot } from "./state";
 import { sendSse, startSse } from "./sse";
 
@@ -232,6 +233,15 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
       opts.core.on("completed", onCompleted);
       startSse(res);
       if (!closed) sendSse(res, "state", snapshot(opts.core.queue, opts.core.config));
+      return;
+    }
+
+    if (req.method === "GET" && pathname === "/api/search") {
+      const controller = new AbortController();
+      const onClose = (): void => controller.abort();
+      req.once("close", onClose);
+      void runSearchSse(res, url.searchParams.get("q") ?? "", { signal: controller.signal })
+        .finally(() => req.off("close", onClose));
       return;
     }
 
