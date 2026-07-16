@@ -27,7 +27,7 @@ describe("Splash", () => {
   it("renders its logo, copy, source categories, search, and footer hints", () => {
     const view = renderSplash();
     expect(view.getByLabelText("torlink")).toBeTruthy();
-    expect(view.getByText("A curated, terminal-native torrent downloader.")).toBeTruthy();
+    expect(view.getByText("A curated, local web app for torrent downloads.")).toBeTruthy();
     expect(view.getByText(/games.*·.*movies.*·.*tv.*·.*anime/i)).toBeTruthy();
     expect(view.getByPlaceholderText("Search or paste a magnet link…")).toBeTruthy();
     expect(view.container.querySelector(".splash-footer")?.textContent).toMatch(/search.*empty.*browse.*quit/i);

@@ -188,4 +188,34 @@ $ rtk npm run typecheck
 ```
 
 Exit status 0.
+
+## Splash tagline test alignment
+
+Updated the stale `Splash` test expectation to match the component's current
+tagline: `A curated, local web app for torrent downloads.`
+
+### Verification
+
+Focused Splash test:
+
+```text
+$ rtk npm test -- src/web/views/Splash.test.tsx
+> vitest run src/web/views/Splash.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  16:53:34
+   Duration  803ms (transform 115ms, setup 0ms, import 227ms, tests 81ms, environment 354ms)
+```
+
+Exit status: 0.
+
+Typecheck:
+
+```text
+$ rtk npm run typecheck
+> tsc --noEmit
+```
+
+Exit status: 0.
 ```
