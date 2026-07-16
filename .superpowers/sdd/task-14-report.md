@@ -82,3 +82,57 @@ Output:
 ```text
 200
 ```
+
+## Task 14 review follow-up
+
+User decision: preserve the source-compatible animated progress sheen on downloading rows (`animate` remains enabled for downloading items); do not remove it. Fix the remaining Important bug: direct double-click actions must operate on the row that was double-clicked, rather than the current selected-row closure.
+
+## TDD red
+
+Added direct failed-row and recent-row double-click regression tests before changing production code.
+
+Command:
+
+```text
+rtk npm test -- src/web/components/Downloads.test.tsx
+```
+
+Output:
+
+```text
+Test Files  1 failed (1)
+Tests  2 failed | 3 passed (5)
+double-clicks a failed row using that row's item: Number of calls: 0
+double-clicks a recent row using that row's item: Number of calls: 0
+```
+
+## Fix details
+
+ActiveRow and RecentRow now receive item-parameterized enter callbacks and invoke them with their own `item` from `onDoubleClick`. Failed active rows call `showError` for that failed item; recent rows call `startDownload` for that history item. The downloading progress sheen remains `animate={item.status === "downloading"}`.
+
+## Verification
+
+Command:
+
+```text
+rtk npm test -- src/web/components/Downloads.test.tsx src/web/components/ErrorDetail.test.tsx
+```
+
+Output:
+
+```text
+Test Files  2 passed (2)
+Tests  7 passed (7)
+```
+
+Command:
+
+```text
+rtk npm run typecheck
+```
+
+Output:
+
+```text
+> tsc --noEmit
+```

@@ -63,6 +63,26 @@ describe("Downloads", () => {
     expect(view.store.clearHistory).toHaveBeenCalledOnce();
   });
 
+  it("double-clicks a failed row using that row's item", () => {
+    const view = renderDownloads();
+    fireEvent.click(view.getByRole("button", { name: /Recent/ }));
+
+    fireEvent.doubleClick(view.getByRole("button", { name: /Failed/ }));
+
+    expect(view.store.showError).toHaveBeenCalledWith(expect.objectContaining({ id: "failed" }));
+    expect(view.store.startDownload).not.toHaveBeenCalled();
+  });
+
+  it("double-clicks a recent row using that row's item", () => {
+    const view = renderDownloads();
+    fireEvent.click(view.getByRole("button", { name: /Failed/ }));
+
+    fireEvent.doubleClick(view.getByRole("button", { name: /Recent/ }));
+
+    expect(view.store.startDownload).toHaveBeenCalledWith(expect.objectContaining({ id: "recent" }));
+    expect(view.store.showError).not.toHaveBeenCalled();
+  });
+
   it("gates keyboard handling outside content and clears download focus on unmount", () => {
     const view = renderDownloads({ region: "sidebar" });
     fireEvent.keyDown(window, { key: "p" });

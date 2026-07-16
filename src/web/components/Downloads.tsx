@@ -96,34 +96,36 @@ export function Downloads() {
   }, [activeItem, cancelDownload, clamped, clearHistory, focused, recentItem, removeHistory, retryFailed, showError, startDownload, toggleDownload, total]);
 
   const select = (index: number): void => { setCursor(index); setRegion("content"); };
-  const enter = (): void => {
-    if (activeItem?.status === "failed") showError(activeItem);
-    else if (recentItem) startDownload({ id: recentItem.id, name: recentItem.name, magnet: recentItem.magnet, source: recentItem.source, sizeBytes: recentItem.sizeBytes });
+  const enterActive = (item: QueueItem): void => {
+    if (item.status === "failed") showError(item);
+  };
+  const enterRecent = (item: HistoryItem): void => {
+    startDownload({ id: item.id, name: item.name, magnet: item.magnet, source: item.source, sizeBytes: item.sizeBytes });
   };
 
   return <div className="col downloads-view">
     <Panel title="downloads" width={WIDTH} focused={focused} count={active.length ? `(${active.length})` : undefined}>
       {total === 0 ? <span className="dim">No downloads yet. Find something and press d to grab it.</span> : <div className="col downloads-list">
-        {active.map((item, index) => <ActiveRow key={item.id} item={item} selected={index === clamped} focused={focused} rowRef={index === clamped ? selectedRow : undefined} onSelect={() => select(index)} onEnter={enter} />)}
+        {active.map((item, index) => <ActiveRow key={item.id} item={item} selected={index === clamped} focused={focused} rowRef={index === clamped ? selectedRow : undefined} onSelect={() => select(index)} onEnter={enterActive} />)}
         {recent.length ? <span className="dim downloads-recent-title">{`Recently downloaded${recent.length > 1 ? `  (${recent.length})` : ""}`}</span> : null}
-        {recent.map((item, index) => <RecentRow key={item.id} item={item} selected={active.length + index === clamped} focused={focused} rowRef={active.length + index === clamped ? selectedRow : undefined} onSelect={() => select(active.length + index)} onEnter={enter} />)}
+        {recent.map((item, index) => <RecentRow key={item.id} item={item} selected={active.length + index === clamped} focused={focused} rowRef={active.length + index === clamped ? selectedRow : undefined} onSelect={() => select(active.length + index)} onEnter={enterRecent} />)}
       </div>}
     </Panel>
   </div>;
 }
 
-function ActiveRow({ item, selected, focused, rowRef, onSelect, onEnter }: { item: QueueItem; selected: boolean; focused: boolean; rowRef?: RefObject<HTMLButtonElement | null>; onSelect(): void; onEnter(): void }) {
+function ActiveRow({ item, selected, focused, rowRef, onSelect, onEnter }: { item: QueueItem; selected: boolean; focused: boolean; rowRef?: RefObject<HTMLButtonElement | null>; onSelect(): void; onEnter(item: QueueItem): void }) {
   const source = sourceStyle(item.source);
   const tone = item.status === "failed" ? "bad" : item.status === "paused" ? "dim" : "accent";
-  return <button ref={rowRef} className={`download-row ${selected && focused ? "selected" : ""} ${item.status === "paused" ? "download-paused" : ""}`} aria-selected={selected} onClick={onSelect} onDoubleClick={onEnter} type="button">
+  return <button ref={rowRef} className={`download-row ${selected && focused ? "selected" : ""} ${item.status === "paused" ? "download-paused" : ""}`} aria-selected={selected} onClick={onSelect} onDoubleClick={() => onEnter(item)} type="button">
     <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className={tone}>{statusIcon(item.status)}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(item.name)}</span><span className="dim">{item.totalBytes > 0 ? formatBytes(item.totalBytes) : "-"}</span><span className={selected && focused ? source.tone : `dim ${source.tone}`}>{source.tag}</span>
     <span className="download-progress"><ProgressBar pct={item.progress} width={24} animate={item.status === "downloading"} /></span><span className="dim trunc">{rightStats(item)}</span>
   </button>;
 }
 
-function RecentRow({ item, selected, focused, rowRef, onSelect, onEnter }: { item: HistoryItem; selected: boolean; focused: boolean; rowRef?: RefObject<HTMLButtonElement | null>; onSelect(): void; onEnter(): void }) {
+function RecentRow({ item, selected, focused, rowRef, onSelect, onEnter }: { item: HistoryItem; selected: boolean; focused: boolean; rowRef?: RefObject<HTMLButtonElement | null>; onSelect(): void; onEnter(item: HistoryItem): void }) {
   const source = sourceStyle(item.source);
-  return <button ref={rowRef} className={`download-row download-recent-row ${selected && focused ? "selected" : ""}`} aria-selected={selected} onClick={onSelect} onDoubleClick={onEnter} type="button">
+  return <button ref={rowRef} className={`download-row download-recent-row ${selected && focused ? "selected" : ""}`} aria-selected={selected} onClick={onSelect} onDoubleClick={() => onEnter(item)} type="button">
     <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className="good">{ICON.done}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(item.name)}</span><span className="dim">{item.sizeBytes > 0 ? formatBytes(item.sizeBytes) : "-"}</span><span className="dim">{formatRelative(item.completedAt / 1000) || "-"}</span><span className={selected && focused ? source.tone : `dim ${source.tone}`}>{source.tag}</span>
   </button>;
 }
