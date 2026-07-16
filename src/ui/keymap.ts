@@ -87,7 +87,13 @@ export function footerHints(
       return [{ keys: "p", label: "Resume" }, { keys: "c", label: "Cancel" }, SWITCH, ALWAYS];
     }
     if (downloadFocus === "failed") {
-      return [{ keys: "f", label: "Retry" }, { keys: "c", label: "Remove" }, SWITCH, ALWAYS];
+      return [
+        { keys: "↵", label: "Error" },
+        { keys: "f", label: "Retry" },
+        { keys: "c", label: "Remove" },
+        SWITCH,
+        ALWAYS,
+      ];
     }
     if (downloadFocus === "recent") {
       return [

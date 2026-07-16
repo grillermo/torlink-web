@@ -58,6 +58,8 @@ export interface Store {
   }) => void;
   copyMagnet: (input: { name: string; magnet: string }) => void;
 
+  showError: (item: QueueItem) => void;
+
   notice: string | null;
   setNotice: (s: string | null) => void;
 

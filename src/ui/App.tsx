@@ -26,6 +26,7 @@ import { Sidebar, RAIL_WIDTH } from "./components/Sidebar";
 import { Rule } from "./components/Rule";
 import { Footer } from "./components/Footer";
 import { HelpOverlay } from "./components/HelpOverlay";
+import { ErrorDetail } from "./components/ErrorDetail";
 import { Results } from "./components/Results";
 import { Downloads } from "./components/Downloads";
 import { Seeding } from "./components/Seeding";
@@ -39,6 +40,7 @@ import { footerHints } from "./keymap";
 import { COLOR, ICON } from "./theme";
 import { useMouseWheel } from "./hooks/useMouseWheel";
 import type { SourceId } from "../sources/types";
+import type { QueueItem } from "../download/types";
 
 export function App({
   initialMagnet,
@@ -89,6 +91,7 @@ export function App({
   const [throttleField, setThrottleField] = useState<ThrottleDirection | null>(null);
   const editingThrottle = throttleField !== null;
   const [notice, setNotice] = useState<string | null>(null);
+  const [errorItem, setErrorItem] = useState<QueueItem | null>(null);
   const booting = useRef(false);
 
   useEffect(() => {
@@ -301,6 +304,10 @@ export function App({
     [config, queue],
   );
 
+  const showError = useCallback((item: QueueItem) => {
+    setErrorItem(item);
+  }, []);
+
   const copyMagnet = useCallback((input: { name: string; magnet: string }) => {
     void (async () => {
       const ok = await writeClipboard(input.magnet);
@@ -383,7 +390,9 @@ export function App({
       section,
       setSection,
       region:
-        showHelp || editingFolder || editingTrackers || editingThrottle ? "help" : region,
+        showHelp || editingFolder || editingTrackers || editingThrottle || errorItem
+          ? "help"
+          : region,
       setRegion,
       captureMode,
       setCaptureMode,
@@ -393,6 +402,7 @@ export function App({
       setSeedFocus,
       startDownload,
       copyMagnet,
+      showError,
       notice,
       setNotice,
       quitAll,
@@ -414,11 +424,13 @@ export function App({
     editingFolder,
     editingTrackers,
     editingThrottle,
+    errorItem,
     captureMode,
     downloadFocus,
     seedFocus,
     startDownload,
     copyMagnet,
+    showError,
     notice,
     listRows,
     compact,
@@ -437,6 +449,10 @@ export function App({
       }
       if (editingFolder || editingTrackers || editingThrottle) return; // the prompt owns input (its own esc + enter)
       if (captureMode === "text") return;
+      if (errorItem) {
+        setErrorItem(null);
+        return;
+      }
       if (showHelp) {
         setShowHelp(false);
         return;
@@ -571,11 +587,19 @@ export function App({
           </Box>
         ) : null}
 
+        {errorItem ? (
+          <Box marginTop={1}>
+            <ErrorDetail item={errorItem} />
+          </Box>
+        ) : null}
+
         <Box
           height={bodyH}
           marginTop={compact ? 0 : 1}
           display={
-            showHelp || editingFolder || editingTrackers || editingThrottle ? "none" : "flex"
+            showHelp || editingFolder || editingTrackers || editingThrottle || errorItem
+              ? "none"
+              : "flex"
           }
           overflow="hidden"
         >
@@ -594,7 +618,9 @@ export function App({
         {showFooter ? (
           <Box
             display={
-              showHelp || editingFolder || editingTrackers || editingThrottle ? "none" : "flex"
+              showHelp || editingFolder || editingTrackers || editingThrottle || errorItem
+                ? "none"
+                : "flex"
             }
           >
             <Footer hints={footerHints(region, section, downloadFocus, seedFocus)} />
