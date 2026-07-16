@@ -70,4 +70,25 @@ describe("SearchBar", () => {
     view.unmount();
     expect(view.store.setCaptureMode).toHaveBeenLastCalledWith("none");
   });
+
+  it("preserves native editing for modified ArrowLeft and non-collapsed selections", () => {
+    const onExitLeft = vi.fn();
+    const view = renderSearchBar({ value: "ubuntu", onExitLeft });
+    const input = view.getByRole("textbox") as HTMLInputElement;
+
+    input.setSelectionRange(0, 0);
+    fireEvent.keyDown(input, { key: "ArrowLeft", ctrlKey: true });
+    fireEvent.keyDown(input, { key: "ArrowLeft", metaKey: true });
+    fireEvent.keyDown(input, { key: "ArrowLeft", altKey: true });
+    expect(onExitLeft).not.toHaveBeenCalled();
+
+    input.setSelectionRange(0, 3);
+    fireEvent.keyDown(input, { key: "ArrowLeft" });
+    expect(onExitLeft).not.toHaveBeenCalled();
+
+    input.setSelectionRange(0, 0);
+    fireEvent.keyDown(input, { key: "ArrowLeft" });
+    expect(onExitLeft).toHaveBeenCalledOnce();
+    view.unmount();
+  });
 });

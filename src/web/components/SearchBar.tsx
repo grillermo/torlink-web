@@ -63,7 +63,15 @@ export function SearchBar({
                 onExitDown?.();
               } else if (event.key === "ArrowDown") {
                 onExitDown?.();
-              } else if (event.key === "ArrowLeft" && event.currentTarget.selectionStart === 0) {
+              } else if (
+                event.key === "ArrowLeft" &&
+                !event.ctrlKey &&
+                !event.metaKey &&
+                !event.altKey &&
+                !event.shiftKey &&
+                event.currentTarget.selectionStart === 0 &&
+                event.currentTarget.selectionEnd === 0
+              ) {
                 onExitLeft?.();
               }
             }}
