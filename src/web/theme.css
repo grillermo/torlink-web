@@ -10,6 +10,65 @@ body {
   overflow-x: clip;
 }
 
+.app-shell {
+  display: flex;
+  min-height: var(--size-full);
+  flex-direction: column;
+  padding: var(--space-xs);
+}
+
+.logo-row,
+.workbench {
+  display: flex;
+}
+
+.logo-row {
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.notice {
+  color: var(--color-good);
+}
+
+.rule {
+  border-top: var(--rule-thin) solid var(--color-rule);
+  margin-block: var(--space-2xs);
+}
+
+.workbench {
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar-slot {
+  flex: 0 0 24ch;
+  border-right: var(--rule-thin) solid var(--color-rule);
+}
+
+.content-slot {
+  min-width: 0;
+  flex: 1;
+}
+
+.overlay-slot {
+  flex: 1;
+}
+
+.footer-slot {
+  min-height: calc(var(--line-body) * 1em);
+  border-top: var(--rule-thin) solid var(--color-rule);
+}
+
+.splash,
+.stopped {
+  display: grid;
+  min-height: var(--size-full);
+  place-items: center;
+  padding: var(--space-sm);
+  text-align: center;
+}
+
 html,
 body,
 #root {
