@@ -68,3 +68,48 @@ usage
 - The existing CLI help heading still says `terminal-native torrent search`.
   It is outside this task's listed cleanup scope and was left unchanged to
   avoid behavior/copy changes beyond the specified import/package work.
+
+## Documentation cleanup review
+
+### Scope
+
+Updated `README.md` and `CONTRIBUTING.md`; this section was appended to the existing report. Existing code and package changes were preserved.
+
+### Stale-reference searches
+
+Command:
+
+```sh
+rtk grep -n -i -E 'preview|src/ui|render-previews|previews' README.md CONTRIBUTING.md
+```
+
+Output (exit status 1; stdout is empty):
+
+```text
+```
+
+Additional targeted searches:
+
+```sh
+rtk grep -n -E 'preview/(splash|browse|downloads)\\.svg|src/ui/|render-previews|npm run previews' README.md CONTRIBUTING.md
+```
+
+Output (exit status 1; stdout is empty):
+
+```text
+```
+
+```sh
+rtk grep -n -E 'src/(ui|util)|render-previews|npm run previews|preview/' README.md CONTRIBUTING.md
+```
+
+Output (exit status 1; stdout is empty):
+
+```text
+```
+
+### Current web workflow
+
+- `npm run dev:server` starts the local API server on port 9877.
+- `npm run dev` starts the Vite React app from `src/web` and proxies `/api/` to the local API server.
+- `npm run build` builds the server and web bundles.

@@ -14,10 +14,19 @@ None of them were big. All of them fit the grain. That's the whole idea.
 git clone https://github.com/baairon/torlink
 cd torlink
 npm install
+```
+
+Start the local web app in two terminals:
+
+```sh
+# terminal 1
+npm run dev:server
+
+# terminal 2
 npm run dev
 ```
 
-`npm run dev` runs the live TUI through tsx, no build step. The README's [Contributing](README.md#contributing) section has the build variant if you want it.
+Open the Vite URL shown by `npm run dev` (usually `http://localhost:5173`). The Vite server proxies `/api/` requests to the local torlink server on port 9877.
 
 ## Before you open a PR
 
@@ -34,7 +43,7 @@ Then check your change against the standards below. The pull request template wa
 
 ### Match the existing grain
 
-Reuse what's there before you write something new. Cursor movement goes through `wrapStep` (`src/ui/move.ts`). Key hints live in the `Hint` / `HELP_GROUPS` / `footerHints` system (`src/ui/keymap.ts`). Shared app state is the `Store` interface (`src/ui/store.ts`).
+Reuse what's there before you write something new. Cursor movement goes through `wrapStep` (`src/web/move.ts`). Key hints live in the `Hint` / `HELP_GROUPS` / `footerHints` system (`src/web/keymap.ts`). Shared app state is the `Store` interface (`src/web/store.ts`).
 
 #4 is the model here: it added a whole navigation mode and still introduced no new state, it leaned on the existing `region` and `captureMode` flags and reused `wrapStep`. If you catch yourself adding a parallel way to do something the codebase already does, stop and use the one that's already there.
 
@@ -44,22 +53,22 @@ People already have the current keys in their fingers. New behavior should layer
 
 ### Cross-platform or it doesn't ship
 
-torlink runs on Windows, macOS, and Linux, so anything that touches the OS branches all three. Look at `writeClipboard` in `src/util/clipboard.ts` from #6: powershell on win32, pbcopy on darwin, then wl-copy, xclip, xsel on linux. #5's `scripts/cli-entry.cjs` is the same instinct aimed at the Node runtime. "Works on my machine" is not the bar.
+torlink runs on Windows, macOS, and Linux, so anything that touches the OS branches all three. Look at `openBrowser` in `src/server/open.ts`: it selects the platform's browser command and treats a failed auto-open as non-fatal. #5's `scripts/cli-entry.cjs` is the same instinct aimed at the Node runtime. "Works on my machine" is not the bar.
 
 ### Fail soft, never crash
 
-When something the user can't control goes wrong, degrade gracefully and say so. #5 prints a friendly upgrade message and exits cleanly instead of letting old Node spit out a parse error. #6's `writeClipboard` returns `false` and surfaces a notice when no clipboard tool exists, it never throws. Reach for a clear message and a fallback before you reach for an exception.
+When something the user can't control goes wrong, degrade gracefully and say so. #5 prints a friendly upgrade message and exits cleanly instead of letting old Node spit out a parse error. The server's browser-opening helper keeps a failed auto-open from crashing the app. Reach for a clear message and a fallback before you reach for an exception.
 
 ### Test the logic
 
-Non-trivial logic gets a vitest test. Pure functions are easy, see `src/util/format.test.ts`. For code that shells out or leans on a platform, mock the node built-in, see `src/util/clipboard.test.ts` from #6 mocking `node:child_process`. Run the suite with `npm test`.
+Non-trivial logic gets a vitest test. Pure functions are easy, see `src/web/move.test.ts`. For code that shells out or leans on a platform, mock the node built-in and follow the existing server tests. Run the suite with `npm test`.
 
 ### Wire the UI surface, and keep it minimal
 
 torlink shows one contextual footer plus a `?` cheatsheet, never a wall of commands. Two rules when you add to it:
 
-- A new key means updating both halves of `src/ui/keymap.ts`: `HELP_GROUPS` (the `?` sheet) and `footerHints` (the footer). #6 did both for `y`.
-- A new `Store` field means adding a matching entry to `makeStore` in `scripts/render-previews-impl.tsx`, or `npm run previews` (the README screenshots) breaks. #6's `copyMagnet` sits in there as a noop for exactly this reason.
+- A new key means updating both halves of `src/web/keymap.ts`: `HELP_GROUPS` (the `?` sheet) and `footerHints` (the footer). #6 did both for `y`.
+- A new `Store` field means adding a matching entry to `makeStore` in `src/web/store.ts`. Keep the web app's store and components in sync; exercise the workflow with `npm run dev` and `npm test`.
 
 ### Respect the calm theme
 

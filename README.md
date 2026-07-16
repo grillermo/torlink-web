@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="preview/splash.svg" alt="torlink, curated torrents straight from your terminal" style="max-width: 832px; width: 100%; height: auto;">
-</p>
-
 Finding a torrent these days sucks. One site is a minefield of fake download buttons. Another hides the real link under a popup that spawns two more tabs. And after all that, half the results are dead, zero seeders.
 
 torlink is a torrent finder that lives in your terminal, with zero setup and nothing to configure. One search checks a short, curated list of reputable sources at once, and whatever you pick downloads straight to your computer. The files are yours, saved to your downloads folder.
@@ -22,19 +18,11 @@ That's the only thing you'll type. torlink opens straight to a search bar: searc
 
 Type what you're looking for and press Enter. Results stream in from every source as they answer, tagged with size and how many people are sharing each one, so you can see what'll come down fast. Arrow to what you want and press `d` to save it.
 
-<p align="center">
-  <img src="preview/browse.svg" alt="torlink's browse view: the sidebar, the search bar, and merged results from every source" style="max-width: 832px; width: 100%; height: auto;">
-</p>
-
 ## Your downloads
 
 Active downloads sit up top with their progress, speed, and time left; when one finishes it drops into Recently downloaded just below, so the list stays tidy. Everything's still there when you come back, and anything interrupted picks up where it left off.
 
 Downloads run in the background while you keep searching, so you can queue up as many as you want. They save to your downloads folder, and the Downloads pane keeps tabs on each one. When something finishes it keeps seeding automatically so the next person can find it too, and the Seeding tab lets you pause or stop that anytime.
-
-<p align="center">
-  <img src="preview/downloads.svg" alt="torlink's Downloads pane: live progress on top, recently downloaded below" style="max-width: 832px; width: 100%; height: auto;">
-</p>
 
 ## What it searches
 
@@ -58,10 +46,12 @@ To run or work on torlink locally:
    ```sh
    npm install
    ```
-3. Run the development version:
+3. Run the web development environment in two terminals:
    ```sh
+   npm run dev:server
    npm run dev
    ```
+   Open the Vite URL shown by `npm run dev` (usually `http://localhost:5173`).
    Or build it and run the bundled version:
    ```sh
    npm run build
