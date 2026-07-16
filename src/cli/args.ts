@@ -18,7 +18,7 @@ export function parseCliArgs(argv: string[]): CliCommand {
 export const HELP_TEXT = `torlink, terminal-native torrent search
 
 usage
-  torlnk                      open the search TUI
+  torlnk                      start torlink and open it in your browser
   torlnk "magnet:?xt=..."     start a download on launch
   torlnk path/to/file.torrent open a .torrent file on launch
   torlnk --version            print the version
