@@ -131,3 +131,17 @@ Exact output (exit status 1; stdout is empty):
 
 ```text
 ```
+
+### Pull request template stale-path search
+
+Command:
+
+```sh
+rtk proxy rg -n -F -e 'src/ui/keymap.ts' -e 'scripts/render-previews-impl.tsx' .github/PULL_REQUEST_TEMPLATE.md || echo '(no matches)'
+```
+
+Exact output:
+
+```text
+(no matches)
+```
