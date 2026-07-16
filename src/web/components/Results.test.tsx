@@ -87,4 +87,14 @@ describe("Results", () => {
     fireEvent.keyDown(window, { key: "d" });
     expect(view.store.startDownload).toHaveBeenCalledTimes(1);
   });
+
+  it("activates content when a result is clicked from the inactive region", () => {
+    search.current = { ...search.current, results };
+    const view = renderResults({ region: "sidebar" });
+    const row = view.getByRole("button", { name: /Movie small/ });
+
+    fireEvent.click(row);
+
+    expect(view.store.setRegion).toHaveBeenCalledWith("content");
+  });
 });

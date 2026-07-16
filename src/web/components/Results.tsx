@@ -157,7 +157,7 @@ export function Results() {
           {results.map((result, index) => {
             const selected = index === clamped;
             const source = sourceStyle(result.source);
-            return <button key={result.infoHash} ref={selected ? selectedRow : undefined} className={`result-grid result-row ${selected && focused ? "selected" : ""}`} aria-selected={selected} onClick={() => setCursor(index)} onDoubleClick={() => openDetail(result)} type="button">
+            return <button key={result.infoHash} ref={selected ? selectedRow : undefined} className={`result-grid result-row ${selected && focused ? "selected" : ""}`} aria-selected={selected} onClick={() => { setCursor(index); setRegion("content"); }} onDoubleClick={() => openDetail(result)} type="button">
               <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className="dim">{index + 1}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(result.name)}</span><span className="dim">{showStats ? (result.sizeBytes > 0 ? formatBytes(result.sizeBytes) : "-") : (formatRelative(result.added) || "-")}</span><span className={result.seeders > 0 ? "good" : "dim"}>{showStats ? (result.seeders || result.leechers ? `${result.seeders}:${result.leechers}` : "-") : ""}</span><span className={selected && focused ? source.tone : `dim ${source.tone}`}>{source.tag}</span>
             </button>;
           })}
