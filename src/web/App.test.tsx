@@ -123,6 +123,14 @@ describe("App state shell", () => {
     expect(document.title).toBe("torlink");
     expect(consoleError).not.toHaveBeenCalled();
   });
+
+  it("wires the hydrated splash and browser sidebar ports into their existing slots", () => {
+    const view = hydrate();
+    expect(view.getByPlaceholderText("Search or paste a magnet link…")).toBeTruthy();
+    openBrowser();
+    expect(view.container.querySelector(".sidebar-slot button")).toBeTruthy();
+    expect(view.getByRole("button", { name: "All" })).toBeTruthy();
+  });
 });
 
 describe("App notices", () => {

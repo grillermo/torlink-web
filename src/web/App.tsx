@@ -8,9 +8,11 @@ import { post, type ActionResponse } from "./api";
 import { Footer } from "./components/Footer";
 import { Logo } from "./components/Logo";
 import { Rule } from "./components/Rule";
+import { Sidebar } from "./components/Sidebar";
 import { TabTitle } from "./components/TabTitle";
 import { useServerState } from "./hooks/useServerState";
 import { handleGlobalKey } from "./keyboard";
+import { Splash } from "./views/Splash";
 import {
   StoreContext,
   type CaptureMode,
@@ -244,7 +246,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
   if (view === "splash") {
     return (
       <StoreContext.Provider value={store}>
-        <main className="splash" data-view="splash">torlink{children}</main>
+        <main className="splash" data-view="splash"><Splash />{children}</main>
       </StoreContext.Provider>
     );
   }
@@ -262,7 +264,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
         <Rule width={80} />
         {overlay ? <section className="overlay-slot" data-overlay={overlay} /> : null}
         <div className="workbench" hidden={overlay !== null}>
-          <aside className="sidebar-slot" data-region="sidebar" />
+          <aside className="sidebar-slot" data-region="sidebar"><Sidebar /></aside>
           <section className="content-slot" data-region="content" data-section={section}>
             {children}
           </section>
