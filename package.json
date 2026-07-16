@@ -14,8 +14,9 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "tsx src/index.tsx",
-    "build": "tsup",
+    "dev": "vite",
+    "dev:server": "TORLINK_PORT=9877 TORLINK_TOKEN=dev TORLINK_NO_OPEN=1 tsx src/index.ts",
+    "build": "tsup && vite build",
     "postbuild": "node scripts/postbuild.cjs",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
@@ -63,12 +64,18 @@
     "webtorrent": "^2.4.1"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^25.9.2",
     "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
     "ink-testing-library": "^4.0.0",
+    "jsdom": "^29.1.1",
+    "react-dom": "^19.2.7",
     "tsup": "^8.5.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
+    "vite": "^8.1.5",
     "vitest": "^4.1.8"
   }
 }

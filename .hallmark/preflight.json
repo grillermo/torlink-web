@@ -1,0 +1,20 @@
+{
+  "date": "2026-07-16",
+  "font_stack": "ui-monospace, SF Mono, Menlo, Consolas, monospace",
+  "palette": {
+    "accent": "#a78bfa",
+    "text": "#e9e4f5",
+    "alt": "#b9a7e6",
+    "good": "#86d6a2",
+    "warn": "#f0c560",
+    "bad": "#ee7d92",
+    "bright": "#d8b4fe",
+    "rule": "#6b6577",
+    "background": "#16121f",
+    "source_solid": "#60a5fa",
+    "source_tpb": "#5fd0c5",
+    "source_1337x": "#f6a55c"
+  },
+  "motion": "none",
+  "framework": "React + Vite"
+}

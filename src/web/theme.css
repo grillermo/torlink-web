@@ -1,0 +1,43 @@
+/* Hallmark · macrostructure: Workbench · theme: Terminal · tone: technical · anchor hue: violet · nav: N3 side rail · footer: Ft2 inline-rule · enrichment: none · pre-emit critique: P5 H4 E5 S5 R5 V5 */
+@import "../../tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+html,
+body,
+#root {
+  height: var(--size-full);
+  margin: var(--space-0);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--line-body);
+}
+
+:focus-visible {
+  outline: var(--rule-focus) solid var(--color-focus);
+  outline-offset: var(--space-3xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: var(--dur-instant);
+    animation-iteration-count: 1;
+    scroll-behavior: auto;
+    transition-duration: var(--dur-instant);
+  }
+}

@@ -1,0 +1,61 @@
+/* Hallmark · macrostructure: Workbench · theme: Terminal · tone: technical · anchor hue: violet · nav: N3 side rail · footer: Ft2 inline-rule · enrichment: none · pre-emit critique: P5 H4 E5 S5 R5 V5 */
+:root {
+  color-scheme: dark;
+
+  --color-accent: oklch(70.8969% 0.15917 293.541);
+  --color-text: oklch(92.7775% 0.02339 299.352);
+  --color-alt: oklch(76.6031% 0.09066 297.328);
+  --color-good: oklch(81.0467% 0.10834 154.727);
+  --color-warn: oklch(84.1717% 0.12857 86.282);
+  --color-bad: oklch(72.1853% 0.13982 9.424);
+  --color-bright: oklch(82.6759% 0.10823 306.383);
+  --color-rule: oklch(51.8659% 0.02886 300.595);
+  --color-bg: oklch(19.3713% 0.0264 298.029);
+  --color-source-solid: oklch(71.374% 0.14338 254.624);
+  --color-source-tpb: oklch(78.9104% 0.1043 186.702);
+  --color-source-1337x: oklch(78.7566% 0.13089 61.053);
+  --color-focus: var(--color-bright);
+
+  --accent: var(--color-accent);
+  --text: var(--color-text);
+  --alt: var(--color-alt);
+  --good: var(--color-good);
+  --warn: var(--color-warn);
+  --bad: var(--color-bad);
+  --bright: var(--color-bright);
+  --rule: var(--color-rule);
+  --bg: var(--color-bg);
+
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-body: var(--font-mono);
+  --font-display: var(--font-mono);
+
+  --space-0: 0;
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  --space-4xl: 8rem;
+  --space-5xl: 12rem;
+
+  --text-body: 0.875rem;
+  --line-body: 1.45;
+  --size-full: 100%;
+
+  --dur-instant: 0ms;
+  --dur-fast: 100ms;
+  --dur-base: 150ms;
+  --dur-slow: 240ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --rule-thin: 1px;
+  --rule-focus: 2px;
+  --radius-none: 0;
+}
