@@ -42,10 +42,14 @@ export function FolderPrompt({ width, dirs, active, onActivate, onAdd, onRemove,
       } else if (event.key === "a") {
         event.preventDefault();
         setCursor(addRow);
+        setValue("");
         setAdding(true);
       } else if (event.key === "Enter") {
         event.preventDefault();
-        if (cursor === addRow) setAdding(true);
+        if (cursor === addRow) {
+          setValue("");
+          setAdding(true);
+        }
         else if (dirs[cursor]) onActivate(dirs[cursor]);
       } else if ((event.key === "Delete" || event.key === "d") && cursor < addRow && dirs[cursor]) {
         event.preventDefault();
@@ -75,10 +79,12 @@ export function FolderPrompt({ width, dirs, active, onActivate, onAdd, onRemove,
               if (event.key === "Enter") {
                 event.preventDefault();
                 setAdding(false);
+                setValue("");
                 onAdd(value);
               } else if (event.key === "Escape") {
                 event.preventDefault();
                 setAdding(false);
+                setValue("");
               }
             }}
             placeholder="~/Downloads/torlink"

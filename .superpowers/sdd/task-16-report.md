@@ -64,3 +64,43 @@ exit 0
 
 - No unrelated pre-existing changes were present in the worktree, and no source Ink/TUI components were changed.
 - The live smoke confirmed Vite served the web application shell. It did not perform browser-driven interaction because no browser automation surface is available in this workspace.
+
+## Review fix: folder draft reset and cursor preservation
+
+Added regression coverage for cancelled/submitted add drafts and for preserving the selected directory when a refused removal rerenders unchanged `dirs`. Add-mode entry, Escape, and submit now clear the draft value.
+
+### TDD red
+
+```text
+$ rtk npm run test -- src/web/components/FolderPrompt.test.tsx
+> vitest run src/web/components/FolderPrompt.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ ❯ src/web/components/FolderPrompt.test.tsx (6 tests | 2 failed) 44ms
+     × clears a cancelled add draft before the next add 7ms
+     × clears a submitted add draft before the next add 4ms
+ Test Files  1 failed (1)
+      Tests  2 failed | 4 passed (6)
+ exit_code=1
+```
+
+### Verification
+
+```text
+$ rtk npm run test -- src/web/components/FolderPrompt.test.tsx
+> vitest run src/web/components/FolderPrompt.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+ exit_code=0
+
+$ rtk npm run test -- src/web/components/FolderPrompt.test.tsx src/web/components/ThrottlePrompt.test.tsx src/web/components/TrackersPrompt.test.tsx src/web/components/HelpOverlay.test.tsx
+> vitest run src/web/components/FolderPrompt.test.tsx src/web/components/ThrottlePrompt.test.tsx src/web/components/TrackersPrompt.test.tsx src/web/components/HelpOverlay.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ Test Files  4 passed (4)
+      Tests  12 passed (12)
+ exit_code=0
+
+$ rtk npm run typecheck
+> tsc --noEmit
+ exit_code=0
+```
