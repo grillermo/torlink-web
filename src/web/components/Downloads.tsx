@@ -3,6 +3,7 @@ import { cleanText, formatBytes, formatBytesPerSec, formatEtaShort, formatRelati
 import type { QueueItem } from "../../download/types";
 import type { HistoryItem } from "../../download/history";
 import { ICON } from "../theme";
+import { isPlainShortcut } from "../keyboard";
 import { wrapStep } from "../move";
 import { useStore } from "../store";
 import { Panel } from "./Panel";
@@ -78,6 +79,7 @@ export function Downloads() {
     const onKeyDown = (event: KeyboardEvent): void => {
       const tag = (event.target as HTMLElement | null)?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea" || event.isComposing) return;
+      if (!isPlainShortcut(event)) return;
       if (event.key === "ArrowUp" || event.key === "k") { event.preventDefault(); setCursor(wrapStep(clamped, -1, total)); return; }
       if (event.key === "ArrowDown" || event.key === "j") { event.preventDefault(); setCursor(wrapStep(clamped, 1, total)); return; }
       if (event.key === "f") { retryFailed(); return; }

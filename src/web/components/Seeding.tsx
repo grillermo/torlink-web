@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { cleanText, formatBytes, formatBytesPerSec, truncate } from "../../util/format";
 import type { HistoryItem } from "../../download/history";
 import type { SeedItem } from "../../download/types";
+import { isPlainShortcut } from "../keyboard";
 import { wrapStep } from "../move";
 import { ICON } from "../theme";
 import { useStore } from "../store";
@@ -66,6 +67,7 @@ export function Seeding() {
     const onKeyDown = (event: KeyboardEvent): void => {
       const tag = (event.target as HTMLElement | null)?.tagName?.toLowerCase();
       if (tag === "input" || tag === "textarea" || event.isComposing) return;
+      if (!isPlainShortcut(event)) return;
       if (event.key === "ArrowUp" || event.key === "k") { event.preventDefault(); setCursor(wrapStep(clamped, -1, total)); return; }
       if (event.key === "ArrowDown" || event.key === "j") { event.preventDefault(); setCursor(wrapStep(clamped, 1, total)); return; }
       const item = history[clamped];

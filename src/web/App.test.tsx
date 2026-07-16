@@ -215,6 +215,19 @@ describe("App notices", () => {
 });
 
 describe("App actions", () => {
+  it.each([
+    { ctrlKey: true },
+    { metaKey: true },
+    { altKey: true },
+  ])("does not open the download throttle for a modified r shortcut", (init) => {
+    const view = hydrate();
+    openBrowser();
+
+    fireEvent.keyDown(window, { key: "r", ...init });
+
+    expect(view.container.querySelector('[data-overlay="download"]')).toBeNull();
+  });
+
   it("keeps the folder prompt and selected cursor after refused removal", async () => {
     mocks.post.mockResolvedValueOnce({ ok: false, notice: "Can't remove the active folder." });
     const state = {

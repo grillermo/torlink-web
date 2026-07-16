@@ -63,6 +63,21 @@ describe("Downloads", () => {
     expect(view.store.clearHistory).toHaveBeenCalledOnce();
   });
 
+  it.each([
+    { ctrlKey: true },
+    { metaKey: true },
+    { altKey: true },
+  ])("leaves modified c shortcuts to the browser", (init) => {
+    const view = renderDownloads();
+
+    fireEvent.keyDown(window, { key: "c", ...init });
+    expect(view.store.cancelDownload).not.toHaveBeenCalled();
+
+    fireEvent.click(view.getByRole("button", { name: /Recent/ }));
+    fireEvent.keyDown(window, { key: "c", ...init });
+    expect(view.store.removeHistory).not.toHaveBeenCalled();
+  });
+
   it("double-clicks a failed row using that row's item", () => {
     const view = renderDownloads();
     fireEvent.click(view.getByRole("button", { name: /Recent/ }));

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { handleGlobalKey, type KeyDeps } from "./keyboard";
+import { handleGlobalKey, isPlainShortcut, type KeyDeps } from "./keyboard";
 
 function deps(over: Partial<KeyDeps> = {}): KeyDeps {
   return {
@@ -33,6 +33,15 @@ function key(
 }
 
 describe("handleGlobalKey", () => {
+  it.each([
+    [{}, true],
+    [{ ctrlKey: true }, false],
+    [{ metaKey: true }, false],
+    [{ altKey: true }, false],
+  ] as const)("recognizes %# as a plain shortcut", (init, expected) => {
+    expect(isPlainShortcut(key("r", undefined, init))).toBe(expected);
+  });
+
   it("? opens help; any key closes it", () => {
     const d = deps();
     handleGlobalKey(key("?"), d);
@@ -99,6 +108,18 @@ describe("handleGlobalKey", () => {
     const event = key("c", undefined, { ctrlKey: true });
     handleGlobalKey(event, d);
     expect(d.quitAll).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it.each([
+    { ctrlKey: true },
+    { metaKey: true },
+    { altKey: true },
+  ])("leaves modified r shortcuts to the browser", (init) => {
+    const d = deps();
+    const event = key("r", undefined, init);
+    handleGlobalKey(event, d);
+    expect(d.openThrottle).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
   });
 

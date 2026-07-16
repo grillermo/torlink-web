@@ -211,6 +211,84 @@ $ rtk npm test -- src/web/views/Splash.test.tsx
 
 Exit status: 0.
 
+## Modified browser shortcut guard
+
+Added `isPlainShortcut(event)` in `src/web/keyboard.ts`. It returns true only
+when `ctrlKey`, `metaKey`, and `altKey` are all false. The global dispatcher,
+Downloads, and Seeding call it immediately after their existing native
+input/textarea/composition guards, so native browser shortcuts are not
+prevented or routed to app actions while plain app shortcuts retain their
+existing handling.
+
+Regression coverage includes the predicate contract, mounted App coverage for
+Ctrl/Cmd/Alt+R not opening the download throttle, and mounted Downloads and
+Seeding coverage for Ctrl/Cmd/Alt+C not canceling or removing items.
+
+### TDD red run
+
+```text
+$ rtk npm test -- src/web/keyboard.test.ts src/web/components/Downloads.test.tsx src/web/components/Seeding.test.tsx src/web/App.test.tsx
+> vitest run src/web/keyboard.test.ts src/web/components/Downloads.test.tsx src/web/components/Seeding.test.tsx src/web/App.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ Test Files  4 failed (4)
+      Tests  16 failed | 39 passed (55)
+   Start at  17:05:12
+   Duration  1.19s (transform 439ms, setup 0ms, import 789ms, tests 544ms, environment 1.51s)
+```
+
+Expected failures: `isPlainShortcut is not a function`; modified `r` opened
+the download throttle; modified `c` canceled or removed the selected item.
+
+### Green and final verification
+
+```text
+$ rtk npm test -- src/web/keyboard.test.ts src/web/components/Downloads.test.tsx src/web/components/Seeding.test.tsx src/web/App.test.tsx
+> vitest run src/web/keyboard.test.ts src/web/components/Downloads.test.tsx src/web/components/Seeding.test.tsx src/web/App.test.tsx
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ Test Files  4 passed (4)
+      Tests  55 passed (55)
+   Start at  17:05:30
+   Duration  1.19s (transform 471ms, setup 0ms, import 810ms, tests 549ms, environment 1.44s)
+
+$ rtk npm run typecheck
+> tsc --noEmit
+```
+
+```text
+$ rtk npm test
+> vitest run
+ RUN  v4.1.9 /Users/grillermo/c/torlink/.worktrees/feat-web-ui
+ Test Files  39 passed (39)
+      Tests  243 passed (243)
+   Start at  17:05:37
+   Duration  5.93s (transform 2.10s, setup 0ms, import 8.94s, tests 7.85s, environment 11.81s)
+
+$ rtk npm run build
+> tsup && vite build
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /Users/grillermo/c/torlink/.worktrees/feat-web-ui/tsup.config.ts
+CLI Target: node22
+CLI Cleaning output folder
+ESM Build start
+ESM dist/index.js 36.89 KB
+ESM ⚡️ Build success in 43ms
+vite v6.4.3 building for production...
+transforming...
+✓ 72 modules transformed.
+rendering chunks...
+computing gzip size...
+../../dist/web/index.html                   0.44 kB │ gzip:  0.27 kB
+../../dist/web/assets/index-BAR8PS-C.css    8.98 kB │ gzip:  2.45 kB
+../../dist/web/assets/index-gdl7Lg8D.js   251.55 kB │ gzip: 78.80 kB
+✓ built in 592ms
+> node scripts/postbuild.cjs
+postbuild: wrote dist/cli.cjs
+```
+
+All listed commands exited with status 0 except the intentional red run.
+
 Typecheck:
 
 ```text

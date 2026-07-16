@@ -17,9 +17,14 @@ export interface KeyDeps {
   quitAll(): void;
 }
 
+export function isPlainShortcut(event: KeyboardEvent): boolean {
+  return !event.ctrlKey && !event.metaKey && !event.altKey;
+}
+
 export function handleGlobalKey(e: KeyboardEvent, deps: KeyDeps): void {
   const tagName = (e.target as { tagName?: string } | null)?.tagName?.toLowerCase();
   if (tagName === "input" || tagName === "textarea" || e.isComposing) return;
+  if (!isPlainShortcut(e)) return;
   if (deps.editingPrompt) return;
 
   if (deps.errorItem) {

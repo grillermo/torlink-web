@@ -62,6 +62,16 @@ describe("Seeding", () => {
     expect(view.store.removeHistory).toHaveBeenCalledWith("missing");
   });
 
+  it.each([
+    { ctrlKey: true },
+    { metaKey: true },
+    { altKey: true },
+  ])("leaves modified c shortcuts to the browser", (init) => {
+    const view = renderSeeding();
+    fireEvent.keyDown(window, { key: "c", ...init });
+    expect(view.store.removeHistory).not.toHaveBeenCalled();
+  });
+
   it("gates keyboard handling outside content and clears seed focus on unmount", () => {
     const view = renderSeeding({ region: "sidebar" });
     fireEvent.keyDown(window, { key: "p" });
