@@ -408,6 +408,70 @@ body {
 
 .overlay-slot {
   flex: 1;
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  padding: var(--space-sm);
+  background: color-mix(in oklch, var(--color-bg) 72%, transparent);
+}
+
+.prompt-modal,
+.help-overlay {
+  max-width: 100%;
+  border: var(--rule-thin) solid var(--color-accent);
+  padding: var(--space-sm);
+  background: var(--color-bg);
+}
+
+.prompt-body {
+  min-width: 0;
+  margin-top: var(--space-2xs);
+}
+
+.prompt-input {
+  min-width: 0;
+  width: calc(100% - 2ch);
+  border: 0;
+  padding: var(--space-0);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  line-height: inherit;
+}
+
+.prompt-input::placeholder {
+  color: var(--color-rule);
+  opacity: 1;
+}
+
+.prompt-hints,
+.prompt-notice {
+  margin: var(--space-sm) var(--space-0) var(--space-0);
+}
+
+.prompt-notice {
+  margin-top: var(--space-2xs);
+}
+
+.help-overlay {
+  width: min(88ch, 100%);
+}
+
+.help-groups {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.help-group {
+  gap: var(--space-3xs);
+}
+
+.help-hint {
+  display: grid;
+  grid-template-columns: 12ch minmax(0, 1fr);
+  gap: var(--space-2xs);
 }
 
 .footer-slot {

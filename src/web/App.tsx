@@ -9,11 +9,15 @@ import { Footer } from "./components/Footer";
 import { Downloads } from "./components/Downloads";
 import { Seeding } from "./components/Seeding";
 import { ErrorDetail } from "./components/ErrorDetail";
+import { FolderPrompt } from "./components/FolderPrompt";
+import { HelpOverlay } from "./components/HelpOverlay";
 import { Logo } from "./components/Logo";
 import { Rule } from "./components/Rule";
 import { Results } from "./components/Results";
 import { Sidebar } from "./components/Sidebar";
 import { TabTitle } from "./components/TabTitle";
+import { ThrottlePrompt } from "./components/ThrottlePrompt";
+import { TrackersPrompt } from "./components/TrackersPrompt";
 import { useServerState } from "./hooks/useServerState";
 import { handleGlobalKey } from "./keyboard";
 import { Splash } from "./views/Splash";
@@ -276,7 +280,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
     return <main className="stopped">torlink stopped — you can close this tab.</main>;
   }
 
-  if (!store) {
+  if (!state || !store) {
     return <main className="splash" aria-live="polite">Starting torlink…</main>;
   }
 
@@ -299,7 +303,34 @@ export function App({ children }: { children?: ReactNode } = {}) {
           {noticeState.text ? <span className="notice" role="status">{noticeState.text}</span> : null}
         </header>
         <Rule width={80} />
-        {overlay ? <section className="overlay-slot" data-overlay={overlay}>{errorItem ? <ErrorDetail item={errorItem} /> : null}</section> : null}
+        {overlay ? (
+          <section className="overlay-slot" data-overlay={overlay}>
+            {errorItem ? <ErrorDetail item={errorItem} /> : null}
+            {showHelp ? <HelpOverlay /> : null}
+            {prompt === "folder" ? <FolderPrompt
+              active={state.config.downloadDir}
+              dirs={state.config.downloadDirs}
+              onActivate={(dir) => submitFolder("use", dir)}
+              onAdd={(dir) => submitFolder("use", dir)}
+              onCancel={() => setPrompt(null)}
+              onRemove={(dir) => submitFolder("remove", dir)}
+              width={60}
+            /> : null}
+            {prompt === "trackers" ? <TrackersPrompt
+              onCancel={() => setPrompt(null)}
+              onSubmit={submitTrackers}
+              value={state.config.trackers}
+              width={60}
+            /> : null}
+            {prompt === "download" || prompt === "upload" ? <ThrottlePrompt
+              direction={prompt}
+              onCancel={() => setPrompt(null)}
+              onSubmit={(value) => submitThrottle(prompt, value)}
+              value={String(prompt === "download" ? state.config.maxDownloadKbps : state.config.maxUploadKbps)}
+              width={40}
+            /> : null}
+          </section>
+        ) : null}
         <div className="workbench" hidden={overlay !== null}>
           <aside className="sidebar-slot" data-region="sidebar"><Sidebar /></aside>
           <section className="content-slot" data-region="content" data-section={section}>
