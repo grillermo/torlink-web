@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Server } from "node:http";
@@ -12,6 +12,7 @@ interface Ctx {
   server: Server;
   core: Core;
   quits: number;
+  webRoot: string;
 }
 
 const ctxs: Ctx[] = [];
@@ -21,7 +22,7 @@ async function start(): Promise<Ctx> {
   const token = createToken();
   const webRoot = mkdtempSync(join(tmpdir(), "torlink-web-"));
   writeFileSync(join(webRoot, "index.html"), "<p>torlink</p>");
-  const ctx: Partial<Ctx> = { token, core, quits: 0 };
+  const ctx: Partial<Ctx> = { token, core, quits: 0, webRoot };
   const server = createTorlinkServer({
     core,
     token,
@@ -41,6 +42,7 @@ afterEach(async () => {
   for (const ctx of ctxs.splice(0)) {
     await new Promise((resolve) => ctx.server.close(resolve));
     ctx.core.suspend();
+    rmSync(ctx.webRoot, { recursive: true, force: true });
   }
 });
 
@@ -74,6 +76,12 @@ describe("torlink http server", () => {
     expect(res.status).toBe(404);
   });
 
+  it("returns 404 for malformed percent-encoded static paths", async () => {
+    const { base } = await start();
+    const res = await fetch(`${base}/assets/%`);
+    expect(res.status).toBe(404);
+  });
+
   it("validates download input", async () => {
     const { base, token } = await start();
     const res = await fetch(`${base}/api/downloads?token=${token}`, {
@@ -82,6 +90,21 @@ describe("torlink http server", () => {
       body: JSON.stringify({ name: "x" }),
     });
     expect(res.status).toBe(400);
+  });
+
+  it("rejects authenticated download bodies larger than 1 MiB", async () => {
+    const { base, token } = await start();
+    const res = await fetch(`${base}/api/downloads?token=${token}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "large",
+        name: "large",
+        magnet: `magnet:?xt=urn:btih:${"0".repeat(40)}`,
+        padding: "x".repeat(1024 * 1024),
+      }),
+    });
+    expect(res.status).toBe(413);
   });
 
   it("quit responds then fires onQuit", async () => {

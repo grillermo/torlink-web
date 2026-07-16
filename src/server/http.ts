@@ -17,6 +17,9 @@ const MIME: Record<string, string> = {
   ".svg": "image/svg+xml",
   ".woff2": "font/woff2",
 };
+const MAX_JSON_BODY_BYTES = 1024 * 1024;
+
+class PayloadTooLargeError extends Error {}
 
 export interface TorlinkServerOptions {
   core: Core;
@@ -48,16 +51,45 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
-async function readJson(req: IncomingMessage): Promise<unknown> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(chunk as Buffer);
-  const raw = Buffer.concat(chunks).toString("utf8");
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
+function readJson(req: IncomingMessage): Promise<unknown> {
+  const declaredLength = Number(req.headers["content-length"]);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_JSON_BODY_BYTES) {
+    req.resume();
+    return Promise.reject(new PayloadTooLargeError());
   }
+
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let tooLarge = false;
+
+    req.on("data", (chunk: Buffer) => {
+      if (tooLarge) return;
+      size += chunk.length;
+      if (size > MAX_JSON_BODY_BYTES) {
+        tooLarge = true;
+        chunks.length = 0;
+        reject(new PayloadTooLargeError());
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.once("error", reject);
+    req.once("aborted", () => reject(new Error("request aborted")));
+    req.once("end", () => {
+      if (tooLarge) return;
+      const raw = Buffer.concat(chunks).toString("utf8");
+      if (!raw) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(raw));
+      } catch {
+        resolve(null);
+      }
+    });
+  });
 }
 
 function isDownloadInput(body: unknown): body is ValidDownloadInput {
@@ -76,7 +108,13 @@ function serveStatic(res: ServerResponse, webRoot: string, pathname: string): vo
   }
 
   const root = resolve(webRoot);
-  const relative = pathname === "/" ? "index.html" : decodeURIComponent(pathname.slice(1));
+  let relative: string;
+  try {
+    relative = pathname === "/" ? "index.html" : decodeURIComponent(pathname.slice(1));
+  } catch {
+    sendJson(res, 404, { error: "not found" });
+    return;
+  }
   const file = resolve(root, relative);
   if (!file.startsWith(`${root}${sep}`)) {
     sendJson(res, 404, { error: "not found" });
@@ -93,8 +131,15 @@ function serveStatic(res: ServerResponse, webRoot: string, pathname: string): vo
     return;
   }
 
-  res.writeHead(200, { "content-type": MIME[extname(file)] ?? "application/octet-stream" });
-  createReadStream(file).pipe(res);
+  const stream = createReadStream(file);
+  stream.once("error", () => {
+    if (!res.headersSent) sendJson(res, 404, { error: "not found" });
+    else res.destroy();
+  });
+  stream.once("open", () => {
+    res.writeHead(200, { "content-type": MIME[extname(file)] ?? "application/octet-stream" });
+    stream.pipe(res);
+  });
 }
 
 export function createTorlinkServer(opts: TorlinkServerOptions): Server {
@@ -125,7 +170,16 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
     }
 
     if (req.method === "POST" && pathname === "/api/downloads") {
-      const body = await readJson(req);
+      let body: unknown;
+      try {
+        body = await readJson(req);
+      } catch (error) {
+        if (error instanceof PayloadTooLargeError) {
+          sendJson(res, 413, { error: "payload too large" });
+          return;
+        }
+        throw error;
+      }
       if (!isDownloadInput(body)) {
         sendJson(res, 400, { error: "invalid input" });
         return;
