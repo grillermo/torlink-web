@@ -105,6 +105,19 @@ describe("torlink http server", () => {
     expect(await res.text()).toContain("torlink");
   });
 
+  it("serves the SPA for extensionless client routes", async () => {
+    const { base } = await start();
+    const res = await fetch(`${base}/downloads/settings`);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("torlink");
+  });
+
+  it("returns 404 for unknown paths with a file extension", async () => {
+    const { base } = await start();
+    const res = await fetch(`${base}/nope.png`);
+    expect(res.status).toBe(404);
+  });
+
   it("blocks path traversal out of webRoot", async () => {
     const { base } = await start();
     const res = await fetch(`${base}/assets/..%2f..%2f..%2fetc%2fpasswd`);

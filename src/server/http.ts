@@ -118,9 +118,19 @@ function serveStatic(res: ServerResponse, webRoot: string, pathname: string): vo
 
   const root = resolve(webRoot);
   let relative: string;
-  try {
-    relative = pathname === "/" ? "index.html" : decodeURIComponent(pathname.slice(1));
-  } catch {
+  if (pathname === "/") {
+    relative = "index.html";
+  } else if (pathname.startsWith("/assets/")) {
+    try {
+      relative = decodeURIComponent(pathname.slice(1));
+    } catch {
+      sendJson(res, 404, { error: "not found" });
+      return;
+    }
+  } else if (extname(pathname) === "") {
+    // SPA fallback: client-side routes like /downloads/settings render index.html
+    relative = "index.html";
+  } else {
     sendJson(res, 404, { error: "not found" });
     return;
   }
@@ -164,7 +174,7 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
     const { pathname } = url;
 
     if (!pathname.startsWith("/api/")) {
-      if (req.method !== "GET" || (pathname !== "/" && !pathname.startsWith("/assets/"))) {
+      if (req.method !== "GET") {
         sendJson(res, 404, { error: "not found" });
         return;
       }
