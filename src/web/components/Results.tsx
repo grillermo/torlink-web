@@ -178,13 +178,12 @@ export function Results() {
       /> : <>
         <div className="result-status">{status()}</div>
         {results.length > 0 ? <div className={`col result-list ${showStats ? "" : "no-stats"}`}>
-          <div className="result-grid result-head dim b"><span /><span>#</span><span>Name</span><span>{showStats ? sortHeader("size", "Size") : "Added"}</span><span>{showStats ? sortHeader("seeders", "Seed:Lch") : ""}</span><span>{sortHeader("source", "Src")}</span></div>
+          <div className="result-grid result-head dim b"><span /><span>#</span><span>Name</span><span>{showStats ? sortHeader("size", "Size") : "Added"}</span><span>{showStats ? sortHeader("seeders", "Seed:Lch") : ""}</span></div>
           {results.map((result, index) => {
             const selected = index === clamped;
-            const source = sourceStyle(result.source);
             return <div className="col" key={result.infoHash}>
               <button ref={selected ? selectedRow : undefined} className={`result-grid result-row ${selected && focused ? "selected" : ""}`} aria-selected={selected} onClick={() => { if (selected && focused) { openDetail(result); return; } setCursor(index); setRegion("content"); }} onDoubleClick={() => openDetail(result)} type="button">
-                <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className="dim">{index + 1}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(result.name)}</span><span className="dim">{showStats ? (result.sizeBytes > 0 ? formatBytes(result.sizeBytes) : "-") : (formatRelative(result.added) || "-")}</span><span className={result.seeders > 0 ? "good" : "dim"}>{showStats ? (result.seeders || result.leechers ? `${result.seeders}:${result.leechers}` : "-") : ""}</span><span className={selected && focused ? source.tone : `dim ${source.tone}`}>{source.tag}</span>
+                <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className="dim">{index + 1}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(result.name)}</span><span className="dim">{showStats ? (result.sizeBytes > 0 ? formatBytes(result.sizeBytes) : "-") : (formatRelative(result.added) || "-")}</span><span className={result.seeders > 0 ? "good" : "dim"}>{showStats ? (result.seeders || result.leechers ? `${result.seeders}:${result.leechers}` : "-") : ""}</span>
               </button>
               {selected && focused ? <RowActions actions={[
                 { label: "download", onPress: () => download(result) },

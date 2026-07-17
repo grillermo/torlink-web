@@ -267,7 +267,7 @@ body {
 
 .result-grid {
   display: grid;
-  grid-template-columns: 2ch 3ch minmax(0, 1fr) 10ch 9ch 4ch;
+  grid-template-columns: 2ch 3ch minmax(0, 1fr) 10ch 9ch;
   gap: 1ch;
   min-width: 0;
   text-align: left;
@@ -849,14 +849,24 @@ body {
     border-top: 0;
   }
 
-  /* Results stays a table — it's a scan-and-pick list. Seeders drop out;
-     the name column needs the room more than the ratio does. */
+  /* Results stays a table — it's a scan-and-pick list. Only the name and one
+     stat fit at this width; seeders decide whether a torrent is worth picking,
+     so size drops out. Without stats the seeders cell is empty, so the
+     added-date column takes its place. */
   .result-grid {
-    grid-template-columns: 2ch 3ch minmax(0, 1fr) auto auto;
+    grid-template-columns: 2ch 3ch minmax(0, 1fr) auto;
     gap: var(--space-2xs);
   }
 
-  .result-grid > :nth-child(5) {
+  .result-grid > :nth-child(4) {
+    display: none;
+  }
+
+  .no-stats .result-grid > :nth-child(4) {
+    display: block;
+  }
+
+  .no-stats .result-grid > :nth-child(5) {
     display: none;
   }
 
