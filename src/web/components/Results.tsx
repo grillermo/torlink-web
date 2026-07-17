@@ -49,7 +49,7 @@ function Detail({ result, onDownload, onCopy, onBack }: {
     ? <><span className={result.seeders > 0 ? "good b" : ""}>{result.seeders}</span><span className="dim">{` seeders ${ICON.dot} ${result.leechers} leechers`}</span></>
     : <span className="dim">unknown</span>;
   return <div className="col result-detail">
-    <div className="row"><strong className="trunc">{cleanText(result.name)}</strong><span className={`b result-source ${source.tone}`}>{source.tag}</span></div>
+    <div className="row"><strong className="result-detail-title">{cleanText(result.name)}</strong><span className={`b result-source ${source.tone}`}>{source.tag}</span></div>
     <Rule width={WIDTH - 4} />
     <div className="col mt">
       <DetailRow label="Size" value={result.sizeBytes > 0 ? formatBytes(result.sizeBytes) : <span className="dim">unknown</span>} />
