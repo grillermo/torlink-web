@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useLocation } from "react-router";
 import type { QueueItem } from "../download/types";
 import type { AppState } from "../server/state";
 import { App } from "./App";
@@ -55,8 +55,17 @@ let currentStore: Store | null = null;
 
 function StoreProbe(): ReactNode {
   const store = useStore();
+  const location = useLocation();
   currentStore = store;
-  return <div data-testid="store-state">{store.state.queue.map((item) => item.name).join(",")}</div>;
+  return (
+    <div data-location={`${location.pathname}${location.search}`} data-testid="store-state">
+      {store.state.queue.map((item) => item.name).join(",")}
+    </div>
+  );
+}
+
+function currentPath(view: ReturnType<typeof renderApp>): string | null {
+  return view.getByTestId("store-state").getAttribute("data-location");
 }
 
 function appTree(): ReactNode {
@@ -316,5 +325,53 @@ describe("App actions", () => {
     expect(view.container.querySelector('[data-overlay="folder"]')).toBeTruthy();
     fireEvent.keyDown(window, { key: "t" });
     expect(view.container.querySelector('[data-overlay="folder"]')).toBeTruthy();
+  });
+});
+
+describe("App URL state", () => {
+  it("deep links to a section with an overlay", () => {
+    const view = hydrate(baseState, "/downloads/settings");
+    expect(view.container.querySelector('[data-overlay="settings"]')).toBeTruthy();
+    fireEvent.click(view.getByRole("button", { name: "Close" }));
+    expect(view.container.querySelector("[data-overlay]")).toBeNull();
+    expect(view.container.querySelector('[data-section="downloads"]')).toBeTruthy();
+    expect(currentPath(view)).toBe("/downloads");
+  });
+
+  it("updates the URL when the section changes", () => {
+    const view = hydrate();
+    openBrowser();
+    expect(currentPath(view)).toBe("/all?q=ubuntu");
+    act(() => currentStore!.setSection("seeding"));
+    expect(currentPath(view)).toBe("/seeding?q=ubuntu");
+    expect(view.container.querySelector('[data-section="seeding"]')).toBeTruthy();
+  });
+
+  it("tracks the settings sheet in the URL", () => {
+    const view = hydrate();
+    openBrowser();
+    fireEvent.click(view.getByRole("button", { name: "Settings" }));
+    expect(view.container.querySelector('[data-overlay="settings"]')).toBeTruthy();
+    expect(currentPath(view)).toBe("/all/settings?q=ubuntu");
+  });
+
+  it("closes a keyboard overlay back to the section URL", () => {
+    const view = hydrate(baseState, "/downloads/help");
+    expect(view.container.querySelector('[data-overlay="help"]')).toBeTruthy();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(view.container.querySelector("[data-overlay]")).toBeNull();
+    expect(currentPath(view)).toBe("/downloads");
+  });
+
+  it("redirects unknown paths to the splash", () => {
+    const view = hydrate(baseState, "/nope");
+    expect(view.container.querySelector('[data-view="splash"]')).toBeTruthy();
+    expect(currentPath(view)).toBe("/");
+  });
+
+  it("restores the search query from the URL", () => {
+    const view = hydrate(baseState, "/all?q=dune");
+    expect(currentStore?.query).toBe("dune");
+    expect(view.container.querySelector('[data-view="browser"]')).toBeTruthy();
   });
 });

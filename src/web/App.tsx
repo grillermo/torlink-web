@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useLocation, useNavigate } from "react-router";
 import type { QueueItem } from "../download/types";
 import { parseMagnet } from "../sources/magnet";
 import type { SourceId } from "../sources/types";
@@ -22,6 +23,7 @@ import { ThrottlePrompt } from "./components/ThrottlePrompt";
 import { TrackersPrompt } from "./components/TrackersPrompt";
 import { useServerState } from "./hooks/useServerState";
 import { handleGlobalKey } from "./keyboard";
+import { overlayPath, overlayToPrompt, parseRoute, promptToOverlay, sectionPath } from "./routes";
 import { Splash } from "./views/Splash";
 import {
   StoreContext,
@@ -43,22 +45,54 @@ function responseNotice(result: ActionResponse): string | null {
 
 export function App({ children }: { children?: ReactNode } = {}) {
   const { state, completed, completedVersion } = useServerState();
-  const [view, setView] = useState<View>("splash");
-  const [query, setQuery] = useState("");
-  const [section, setSection] = useState<Section>("all");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const route = useMemo(
+    () => parseRoute(location.pathname, location.search),
+    [location.pathname, location.search],
+  );
+  const { view, section, query } = route;
+  const prompt = overlayToPrompt(route.overlay);
+  const settingsOpen = route.overlay === "settings";
+  const showHelp = route.overlay === "help";
   const [region, setRegion] = useState<Region>("content");
   const [captureMode, setCaptureMode] = useState<CaptureMode>("none");
   const [downloadFocus, setDownloadFocus] = useState<DownloadFocus | null>(null);
   const [seedFocus, setSeedFocus] = useState<SeedFocus | null>(null);
-  const [showHelp, setShowHelp] = useState(false);
-  const [prompt, setPrompt] = useState<Prompt | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const noticeSequence = useRef(0);
   const [noticeState, setNoticeState] = useState<{ text: string | null; sequence: number }>({
     text: null,
     sequence: 0,
   });
   const [errorItem, setErrorItem] = useState<QueueItem | null>(null);
+
+  useEffect(() => {
+    if (route.redirect) navigate("/", { replace: true });
+  }, [navigate, route.redirect]);
+
+  const go = useCallback((to: string): void => {
+    if (to !== `${location.pathname}${location.search}`) navigate(to);
+  }, [location.pathname, location.search, navigate]);
+
+  const setView = useCallback((next: View): void => {
+    go(next === "splash" ? "/" : sectionPath(section, query));
+  }, [go, query, section]);
+
+  const setSection = useCallback((next: Section): void => {
+    go(sectionPath(next, query));
+  }, [go, query]);
+
+  const setPrompt = useCallback((next: Prompt | null): void => {
+    go(next ? overlayPath(section, promptToOverlay(next), query) : sectionPath(section, query));
+  }, [go, query, section]);
+
+  const setSettingsOpen = useCallback((open: boolean): void => {
+    go(open ? overlayPath(section, "settings", query) : sectionPath(section, query));
+  }, [go, query, section]);
+
+  const setShowHelp = useCallback((show: boolean): void => {
+    go(show ? overlayPath(section, "help", query) : sectionPath(section, query));
+  }, [go, query, section]);
 
   const reserveNotice = useCallback((): number => {
     noticeSequence.current += 1;
@@ -107,7 +141,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
     void runAction("/api/downloads", input);
     setSection("downloads");
     setRegion("content");
-  }, [runAction]);
+  }, [runAction, setSection]);
 
   const cancelDownload = useCallback((id: string) => {
     void runAction(`/api/downloads/${encodeURIComponent(id)}/cancel`);
@@ -161,15 +195,12 @@ export function App({ children }: { children?: ReactNode } = {}) {
       const magnet = parseMagnet(nextQuery);
       if (magnet) {
         startDownload({ id: magnet.infoHash, name: magnet.name, magnet: magnet.magnet });
-        setView("browser");
         return;
       }
     }
-    setQuery(nextQuery);
-    setView("browser");
-    if (section === "downloads") setSection("all");
+    go(sectionPath(section === "downloads" ? "all" : section, nextQuery));
     setRegion("content");
-  }, [section, startDownload]);
+  }, [go, section, startDownload]);
 
   const pasteFromClipboard = useCallback(async () => {
     const sequence = reserveNotice();
@@ -190,7 +221,6 @@ export function App({ children }: { children?: ReactNode } = {}) {
     const magnet = found ? parseMagnet(found) : null;
     if (magnet) {
       startDownload({ id: magnet.infoHash, name: magnet.name, magnet: magnet.magnet });
-      setView("browser");
       return;
     }
     publishReservedNotice(sequence, "No magnet link on the clipboard.");
@@ -200,17 +230,17 @@ export function App({ children }: { children?: ReactNode } = {}) {
     void runAction("/api/config/folder", { action, dir }).then((result) => {
       if (result.ok) setPrompt(null);
     });
-  }, [runAction]);
+  }, [runAction, setPrompt]);
 
   const submitTrackers = useCallback((urls: string[]) => {
     setPrompt(null);
     void runAction("/api/config/trackers", { urls });
-  }, [runAction]);
+  }, [runAction, setPrompt]);
 
   const submitThrottle = useCallback((direction: ThrottleDirection, value: string) => {
     setPrompt(null);
     void runAction("/api/config/throttle", { direction, value });
-  }, [runAction]);
+  }, [runAction, setPrompt]);
 
   useEffect(() => {
     if (!state || view !== "browser") return;
@@ -231,7 +261,10 @@ export function App({ children }: { children?: ReactNode } = {}) {
     });
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [captureMode, errorItem, pasteFromClipboard, prompt, region, settingsOpen, showHelp, state, view]);
+  }, [
+    captureMode, errorItem, pasteFromClipboard, prompt, region, setPrompt, setShowHelp,
+    setView, settingsOpen, showHelp, state, view,
+  ]);
 
   const store = useMemo<Store | null>(() => state ? {
     config: state.config,
@@ -263,14 +296,13 @@ export function App({ children }: { children?: ReactNode } = {}) {
     setNotice,
   } : null, [
     cancelDownload, captureMode, clearHistory, copyMagnet, downloadFocus, errorItem, noticeState.text,
-    prompt, query, region, removeHistory, retryFailed, section, seedFocus, settingsOpen,
-    showHelp, startDownload, state, submitQuery, toggleDownload, toggleSeed, view,
+    prompt, query, region, removeHistory, retryFailed, section, seedFocus, setNotice, setSection,
+    setView, settingsOpen, showHelp, startDownload, state, submitQuery, toggleDownload, toggleSeed, view,
   ]);
 
   const openSettings = useCallback((target: SettingsTarget): void => {
-    setSettingsOpen(false);
-    setPrompt(target);
-  }, []);
+    go(overlayPath(section, promptToOverlay(target), query));
+  }, [go, query, section]);
 
   if (!state || !store) {
     return <main className="splash" aria-live="polite">Starting torlink…</main>;
