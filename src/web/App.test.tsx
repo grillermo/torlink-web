@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router";
 import type { QueueItem } from "../download/types";
 import type { AppState } from "../server/state";
 import { App } from "./App";
@@ -58,13 +59,21 @@ function StoreProbe(): ReactNode {
   return <div data-testid="store-state">{store.state.queue.map((item) => item.name).join(",")}</div>;
 }
 
-function renderApp() {
-  return render(<App><StoreProbe /></App>);
+function appTree(): ReactNode {
+  return <App><StoreProbe /></App>;
 }
 
-function hydrate(state: AppState = baseState) {
+function renderApp(initialPath = "/") {
+  return render(<MemoryRouter initialEntries={[initialPath]}>{appTree()}</MemoryRouter>);
+}
+
+function rerenderApp(view: ReturnType<typeof renderApp>): void {
+  view.rerender(<MemoryRouter>{appTree()}</MemoryRouter>);
+}
+
+function hydrate(state: AppState = baseState, initialPath = "/") {
   mocks.server.current = { state, completed: null, completedVersion: 0 };
-  return renderApp();
+  return renderApp(initialPath);
 }
 
 function openBrowser(): void {
@@ -97,7 +106,7 @@ describe("App state shell", () => {
     expect(view.getByText("Starting torlink…")).toBeTruthy();
 
     mocks.server.current = { state: baseState, completed: null, completedVersion: 0 };
-    view.rerender(<App><StoreProbe /></App>);
+    rerenderApp(view);
 
     expect(view.container.querySelector('[data-view="splash"]')).toBeTruthy();
     expect(currentStore?.state).toBe(baseState);
@@ -107,7 +116,7 @@ describe("App state shell", () => {
     const view = hydrate();
     const next = { ...baseState, queue: [failedItem] };
     mocks.server.current = { state: next, completed: null, completedVersion: 0 };
-    view.rerender(<App><StoreProbe /></App>);
+    rerenderApp(view);
 
     expect(view.getByTestId("store-state").textContent).toBe("failed.iso");
     expect(currentStore?.state).toBe(next);
@@ -155,13 +164,13 @@ describe("App notices", () => {
     openBrowser();
 
     mocks.server.current = { state: baseState, completed: "same.iso", completedVersion: 1 };
-    view.rerender(<App><StoreProbe /></App>);
+    rerenderApp(view);
     expect(view.getByRole("status").textContent).toBe("✓ same.iso");
     act(() => vi.advanceTimersByTime(4000));
     expect(view.queryByRole("status")).toBeNull();
 
     mocks.server.current = { state: baseState, completed: "same.iso", completedVersion: 2 };
-    view.rerender(<App><StoreProbe /></App>);
+    rerenderApp(view);
     expect(view.getByRole("status").textContent).toBe("✓ same.iso");
   });
 
@@ -191,7 +200,7 @@ describe("App notices", () => {
 
     act(() => currentStore!.copyMagnet({ name: "one", magnet: "magnet:?xt=urn:btih:one" }));
     mocks.server.current = { state: baseState, completed: "new.iso", completedVersion: 1 };
-    view.rerender(<App><StoreProbe /></App>);
+    rerenderApp(view);
     await act(async () => pending.resolve());
 
     expect(view.getByRole("status").textContent).toBe("✓ new.iso");
