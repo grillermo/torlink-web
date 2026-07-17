@@ -71,6 +71,23 @@ describe("SearchBar", () => {
     expect(view.store.setCaptureMode).toHaveBeenLastCalledWith("none");
   });
 
+  it("renders a focusable input even when not editing and activates on focus", () => {
+    const onActivate = vi.fn();
+    const view = renderSearchBar({ editing: false, onActivate });
+    const input = view.getByRole("textbox");
+    fireEvent.focus(input);
+    expect(onActivate).toHaveBeenCalledOnce();
+    expect(view.store.setCaptureMode).toHaveBeenCalledWith("text");
+  });
+
+  it("focuses the input when the surrounding row is tapped", () => {
+    const view = renderSearchBar({ editing: false });
+    const row = view.container.querySelector(".search-row");
+    expect(row).not.toBeNull();
+    fireEvent.click(row as HTMLElement);
+    expect(document.activeElement).toBe(view.getByRole("textbox"));
+  });
+
   it("preserves native editing for modified ArrowLeft and non-collapsed selections", () => {
     const onExitLeft = vi.fn();
     const view = renderSearchBar({ value: "ubuntu", onExitLeft });

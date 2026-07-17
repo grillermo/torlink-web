@@ -167,7 +167,7 @@ export function Results() {
   const download = (result: TorrentResult): void => startDownload({ id: result.infoHash, name: result.name, magnet: result.magnet, source: result.source, sizeBytes: result.sizeBytes, seeders: result.seeders });
 
   return <div className="col results-view">
-    <SearchBar width={WIDTH} value={query} editing={mode === "search"} placeholder={PLACEHOLDER} onSubmit={(value) => { setMode("list"); submitQuery(value); }} onExitDown={() => setMode("list")} onExitLeft={() => setRegion("sidebar")} />
+    <SearchBar width={WIDTH} value={query} editing={mode === "search"} placeholder={PLACEHOLDER} onActivate={() => { setRegion("content"); setDetail(null); setMode("search"); }} onSubmit={(value) => { setMode("list"); submitQuery(value); }} onExitDown={() => setMode("list")} onExitLeft={() => setRegion("sidebar")} />
     <FilterChips />
     <div className="mt"><Panel title={mode === "detail" ? "details" : browsing ? "latest" : "results"} width={WIDTH} focused={focused && mode !== "search"} count={mode === "detail" || results.length === 0 ? undefined : `(${results.length})`}>
       {mode === "detail" && detail ? <Detail

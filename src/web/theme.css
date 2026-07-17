@@ -221,6 +221,7 @@ body {
 .search-row {
   min-width: 0;
   flex: 1;
+  cursor: text;
 }
 
 .search-input {
