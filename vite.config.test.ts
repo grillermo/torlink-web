@@ -32,6 +32,6 @@ describe("Vite development server", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/javascript");
-    expect(await response.text()).toContain("torlink-token");
+    expect(await response.text()).toContain("torlink server unreachable");
   });
 });

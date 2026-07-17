@@ -73,8 +73,6 @@ function torrent(source: SourceId, overrides: Partial<TorrentResult> = {}): Torr
 
 beforeEach(() => {
   FakeEventSource.instances = [];
-  window.history.replaceState(null, "", "/?token=test-token");
-  sessionStorage.clear();
   vi.stubGlobal("EventSource", FakeEventSource);
 });
 
@@ -90,7 +88,7 @@ describe("useServerState", () => {
     expect(FakeEventSource.instances).toHaveLength(2);
     expect(FakeEventSource.instances[0]!.closed).toBe(true);
     const stream = FakeEventSource.instances[1]!;
-    expect(stream.url).toBe("/api/events?token=test-token");
+    expect(stream.url).toBe("/api/events");
 
     act(() => stream.emit("state", "{"));
     expect(result.current.state).toBeNull();
@@ -123,7 +121,7 @@ describe("useConcurrentSearch", () => {
     rerender({ query: "new" });
     const newStream = FakeEventSource.instances[1]!;
     expect(oldStream.closed).toBe(true);
-    expect(newStream.url).toBe("/api/search?q=new&token=test-token");
+    expect(newStream.url).toBe("/api/search?q=new");
 
     act(() => oldStream.emit("source", { sourceId: "fitgirl", items: [torrent("fitgirl")] }));
     expect(result.current.done).toBe(0);

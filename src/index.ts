@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { parseCliArgs, HELP_TEXT, type CliCommand } from "./cli/args";
 import { parsePort, StartupLifecycle } from "./cli/startup";
 import { Core } from "./server/core";
-import { createToken, createTorlinkServer } from "./server/http";
+import { createTorlinkServer } from "./server/http";
 import { openBrowser } from "./server/open";
 import { parseMagnet } from "./sources/magnet";
 import { magnetFromTorrentFile } from "./sources/torrentFile";
@@ -49,11 +49,9 @@ async function start(command: Extract<CliCommand, { kind: "run" }>): Promise<voi
   }
   if (lifecycle.stopping) return;
 
-  const token = process.env.TORLINK_TOKEN ?? createToken();
   const webRoot = fileURLToPath(new URL("./web/", import.meta.url));
   const server = createTorlinkServer({
     core,
-    token,
     webRoot,
     onQuit: () => lifecycle.terminate(0),
   });
@@ -73,7 +71,7 @@ async function start(command: Extract<CliCommand, { kind: "run" }>): Promise<voi
 
   const addr = server.address();
   const actual = addr && typeof addr !== "string" ? addr.port : port;
-  const url = `http://127.0.0.1:${actual}/?token=${token}`;
+  const url = `http://127.0.0.1:${actual}/`;
   console.log(`torlink v${VERSION}\n\n  ${url}\n\nCtrl+C to quit.`);
   if (!process.env.TORLINK_NO_OPEN) openBrowser(url);
 }

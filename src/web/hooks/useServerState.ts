@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { AppState } from "../../server/state";
-import { apiUrl } from "../api";
 
 export function useServerState(): {
   state: AppState | null;
@@ -12,7 +11,7 @@ export function useServerState(): {
   const [completedVersion, setCompletedVersion] = useState(0);
 
   useEffect(() => {
-    const es = new EventSource(apiUrl("/api/events"));
+    const es = new EventSource("/api/events");
     es.addEventListener("state", (e) => {
       try {
         setState(JSON.parse((e as MessageEvent).data) as AppState);

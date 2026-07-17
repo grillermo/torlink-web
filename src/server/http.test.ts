@@ -6,7 +6,7 @@ import { ServerResponse, type Server } from "node:http";
 const stateDir = mkdtempSync(join(tmpdir(), "torlink-http-state-"));
 process.env.TORLINK_STATE_DIR = stateDir;
 const { Core } = await import("./core");
-const { createToken, createTorlinkServer } = await import("./http");
+const { createTorlinkServer } = await import("./http");
 type CoreInstance = Awaited<ReturnType<typeof Core.boot>>;
 
 const searchHarness = vi.hoisted(() => ({
@@ -49,7 +49,6 @@ vi.mock("../sources/registry", () => ({
 
 interface Ctx {
   base: string;
-  token: string;
   server: Server;
   core: CoreInstance;
   quits: number;
@@ -61,13 +60,11 @@ const eventStreams: EventStream[] = [];
 
 async function start(): Promise<Ctx> {
   const core = await Core.boot();
-  const token = createToken();
   const webRoot = mkdtempSync(join(tmpdir(), "torlink-web-"));
   writeFileSync(join(webRoot, "index.html"), "<p>torlink</p>");
-  const ctx: Partial<Ctx> = { token, core, quits: 0, webRoot };
+  const ctx: Partial<Ctx> = { core, quits: 0, webRoot };
   const server = createTorlinkServer({
     core,
-    token,
     webRoot,
     onQuit: () => { ctx.quits = (ctx.quits ?? 0) + 1; },
   });
@@ -100,23 +97,13 @@ afterAll(() => {
 });
 
 describe("torlink http server", () => {
-  it("rejects /api requests without the token", async () => {
+  it("returns 404 for unknown /api routes", async () => {
     const { base } = await start();
-    const res = await fetch(`${base}/api/downloads`, { method: "POST" });
-    expect(res.status).toBe(401);
+    const res = await fetch(`${base}/api/nope`);
+    expect(res.status).toBe(404);
   });
 
-  it("accepts the token as query param or header", async () => {
-    const { base, token } = await start();
-    const query = await fetch(`${base}/api/nope?token=${token}`);
-    expect(query.status).toBe(404);
-    const header = await fetch(`${base}/api/nope`, {
-      headers: { "x-torlink-token": token },
-    });
-    expect(header.status).toBe(404);
-  });
-
-  it("serves the SPA without a token", async () => {
+  it("serves the SPA", async () => {
     const { base } = await start();
     const res = await fetch(`${base}/`);
     expect(res.status).toBe(200);
@@ -136,8 +123,8 @@ describe("torlink http server", () => {
   });
 
   it("validates download input", async () => {
-    const { base, token } = await start();
-    const res = await fetch(`${base}/api/downloads?token=${token}`, {
+    const { base } = await start();
+    const res = await fetch(`${base}/api/downloads`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ name: "x" }),
@@ -145,9 +132,9 @@ describe("torlink http server", () => {
     expect(res.status).toBe(400);
   });
 
-  it("rejects authenticated download bodies larger than 1 MiB", async () => {
-    const { base, token } = await start();
-    const res = await fetch(`${base}/api/downloads?token=${token}`, {
+  it("rejects download bodies larger than 1 MiB", async () => {
+    const { base } = await start();
+    const res = await fetch(`${base}/api/downloads`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -162,7 +149,7 @@ describe("torlink http server", () => {
 
   it("quit responds then fires onQuit", async () => {
     const ctx = await start();
-    const res = await fetch(`${ctx.base}/api/quit?token=${ctx.token}`, { method: "POST" });
+    const res = await fetch(`${ctx.base}/api/quit`, { method: "POST" });
     expect(res.status).toBe(200);
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(ctx.quits).toBe(1);
@@ -179,8 +166,8 @@ interface EventStream {
   cancel: () => Promise<void>;
 }
 
-async function openEventStream(base: string, token: string): Promise<EventStream> {
-  const res = await fetch(`${base}/api/events?token=${token}`);
+async function openEventStream(base: string): Promise<EventStream> {
+  const res = await fetch(`${base}/api/events`);
   expect(res.status).toBe(200);
   const reader = res.body!.getReader();
   const queued: SseEvent[] = [];
@@ -237,13 +224,9 @@ function parseSseText(text: string): SseEvent[] {
 }
 
 describe("GET /api/search", () => {
-  it("requires the token and completes a deterministic SSE search", async () => {
-    const { base, token } = await start();
-    const unauthorized = await fetch(`${base}/api/search?q=http-normal`);
-    expect(unauthorized.status).toBe(401);
-    expect(searchHarness.calls).toEqual([]);
-
-    const response = await fetch(`${base}/api/search?q=http-normal&token=${token}`);
+  it("completes a deterministic SSE search", async () => {
+    const { base } = await start();
+    const response = await fetch(`${base}/api/search?q=http-normal`);
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("text/event-stream");
     expect(parseSseText(await response.text())).toEqual([
@@ -269,12 +252,12 @@ describe("GET /api/search", () => {
 
   it("aborts and removes response listeners after client disconnect", async () => {
     searchHarness.mode = "pending";
-    const { base, token, server } = await start();
+    const { base, server } = await start();
     let response: ServerResponse | undefined;
     server.on("request", (req, res) => {
       if (req.url?.startsWith("/api/search")) response = res;
     });
-    const clientResponse = await fetch(`${base}/api/search?q=http-disconnect&token=${token}`);
+    const clientResponse = await fetch(`${base}/api/search?q=http-disconnect`);
     try {
       expect(response).toBeDefined();
       expect(response!.listenerCount("close")).toBeGreaterThan(0);
@@ -292,12 +275,12 @@ describe("GET /api/search", () => {
 
   it("cleans up idempotently on response error followed by close", async () => {
     searchHarness.mode = "pending";
-    const { base, token, server } = await start();
+    const { base, server } = await start();
     let response: ServerResponse | undefined;
     server.on("request", (req, res) => {
       if (req.url?.startsWith("/api/search")) response = res;
     });
-    const clientResponse = await fetch(`${base}/api/search?q=http-error&token=${token}`);
+    const clientResponse = await fetch(`${base}/api/search?q=http-error`);
 
     expect(response).toBeDefined();
     let emittedError: unknown;
@@ -318,12 +301,12 @@ describe("GET /api/search", () => {
 
   it("observes a terminal SSE failure after headers start", async () => {
     searchHarness.mode = "deferred";
-    const { base, token, server } = await start();
+    const { base, server } = await start();
     let response: ServerResponse | undefined;
     server.on("request", (req, res) => {
       if (req.url?.startsWith("/api/search")) response = res;
     });
-    const clientResponse = await fetch(`${base}/api/search?q=http-write-error&token=${token}`);
+    const clientResponse = await fetch(`${base}/api/search?q=http-write-error`);
     expect(response).toBeDefined();
     const destroy = vi.spyOn(response!, "destroy");
     response!.write = () => { throw new Error("test terminal SSE write failure"); };
@@ -343,9 +326,9 @@ describe("GET /api/search", () => {
 
 describe("GET /api/events", () => {
   it("sends an initial state snapshot and pushes on updates", async () => {
-    const { base, token, core } = await start();
+    const { base, core } = await start();
     core.config = { ...core.config, maxDownloadKbps: 0 };
-    const stream = await openEventStream(base, token);
+    const stream = await openEventStream(base);
     const initial = await stream.next();
     core.config = { ...core.config, maxDownloadKbps: 123 };
     core.emit("update");
@@ -359,8 +342,8 @@ describe("GET /api/events", () => {
   });
 
   it("forwards completed events immediately", async () => {
-    const { base, token, core } = await start();
-    const stream = await openEventStream(base, token);
+    const { base, core } = await start();
+    const stream = await openEventStream(base);
     await stream.next();
 
     core.emit("completed", "ubuntu.iso");
@@ -372,9 +355,9 @@ describe("GET /api/events", () => {
   });
 
   it("coalesces rapid updates into one trailing snapshot of the latest state", async () => {
-    const { base, token, core } = await start();
+    const { base, core } = await start();
     core.config = { ...core.config, maxDownloadKbps: 0 };
-    const stream = await openEventStream(base, token);
+    const stream = await openEventStream(base);
     await stream.next();
 
     vi.useFakeTimers();
@@ -404,10 +387,10 @@ describe("GET /api/events", () => {
   });
 
   it("removes Core listeners after client cancellation", async () => {
-    const { base, token, core } = await start();
+    const { base, core } = await start();
     const updateListeners = core.listenerCount("update");
     const completedListeners = core.listenerCount("completed");
-    const stream = await openEventStream(base, token);
+    const stream = await openEventStream(base);
     await stream.next();
     expect(core.listenerCount("update")).toBe(updateListeners + 1);
     expect(core.listenerCount("completed")).toBe(completedListeners + 1);
@@ -434,8 +417,8 @@ describe("GET /api/events", () => {
       return Reflect.apply(originalWrite, this, args) as boolean;
     });
     try {
-      const { base, token } = await start();
-      const stream = await openEventStream(base, token);
+      const { base } = await start();
+      const stream = await openEventStream(base);
       await stream.next();
       expect(errorListenersAtFirstWrite).toBeGreaterThan(0);
     } finally {
@@ -444,14 +427,14 @@ describe("GET /api/events", () => {
   });
 
   it("cleans up idempotently on response error followed by close", async () => {
-    const { base, token, core, server } = await start();
+    const { base, core, server } = await start();
     const updateListeners = core.listenerCount("update");
     const completedListeners = core.listenerCount("completed");
     let response: ServerResponse | undefined;
     server.on("request", (req, res) => {
       if (req.url?.startsWith("/api/events")) response = res;
     });
-    const stream = await openEventStream(base, token);
+    const stream = await openEventStream(base);
     await stream.next();
 
     expect(response).toBeDefined();
@@ -469,9 +452,9 @@ describe("GET /api/events", () => {
 
 describe("action routes", () => {
   it("download lifecycle routes are tolerant of unknown ids", async () => {
-    const { base, token } = await start();
+    const { base } = await start();
     for (const action of ["pause", "resume", "cancel", "retry"]) {
-      const res = await fetch(`${base}/api/downloads/nope/${action}?token=${token}`, {
+      const res = await fetch(`${base}/api/downloads/nope/${action}`, {
         method: "POST",
       });
       expect(res.status).toBe(200);
@@ -479,13 +462,13 @@ describe("action routes", () => {
   });
 
   it("throttle route validates direction and applies", async () => {
-    const { base, token, core } = await start();
-    const bad = await fetch(`${base}/api/config/throttle?token=${token}`, {
+    const { base, core } = await start();
+    const bad = await fetch(`${base}/api/config/throttle`, {
       method: "POST",
       body: JSON.stringify({ direction: "sideways", value: "5" }),
     });
     expect(bad.status).toBe(400);
-    const ok = await fetch(`${base}/api/config/throttle?token=${token}`, {
+    const ok = await fetch(`${base}/api/config/throttle`, {
       method: "POST",
       body: JSON.stringify({ direction: "download", value: "250" }),
     });
@@ -495,13 +478,13 @@ describe("action routes", () => {
   });
 
   it("trackers and folder routes round-trip through Core", async () => {
-    const { base, token, core } = await start();
-    const t = await fetch(`${base}/api/config/trackers?token=${token}`, {
+    const { base, core } = await start();
+    const t = await fetch(`${base}/api/config/trackers`, {
       method: "POST",
       body: JSON.stringify({ urls: ["udp://x:1"] }),
     });
     expect((await t.json() as { notice: string }).notice).toBe("Saved 1 tracker.");
-    const f = await fetch(`${base}/api/config/folder?token=${token}`, {
+    const f = await fetch(`${base}/api/config/folder`, {
       method: "POST",
       body: JSON.stringify({ action: "remove", dir: core.config.downloadDir }),
     });
@@ -509,8 +492,8 @@ describe("action routes", () => {
   });
 
   it("seed resume 404s for an id with no history", async () => {
-    const { base, token } = await start();
-    const res = await fetch(`${base}/api/seeds/nope/resume?token=${token}`, { method: "POST" });
+    const { base } = await start();
+    const res = await fetch(`${base}/api/seeds/nope/resume`, { method: "POST" });
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: "unknown id" });
   });

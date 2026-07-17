@@ -14,7 +14,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:server": "TORLINK_PORT=9877 TORLINK_TOKEN=dev TORLINK_NO_OPEN=1 tsx src/index.ts",
+    "dev:server": "TORLINK_PORT=9877 TORLINK_NO_OPEN=1 tsx src/index.ts",
     "build": "tsup && vite build",
     "postbuild": "node scripts/postbuild.cjs",
     "start": "node dist/index.js",

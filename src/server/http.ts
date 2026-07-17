@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import {
   createServer,
@@ -26,7 +25,6 @@ class PayloadTooLargeError extends Error {}
 
 export interface TorlinkServerOptions {
   core: Core;
-  token: string;
   webRoot: string;
   onQuit: () => void;
 }
@@ -43,10 +41,6 @@ interface ValidDownloadInput extends DownloadInput {
   id: string;
   name: string;
   magnet: string;
-}
-
-export function createToken(): string {
-  return randomBytes(24).toString("hex");
 }
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
@@ -175,12 +169,6 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
         return;
       }
       serveStatic(res, opts.webRoot, pathname);
-      return;
-    }
-
-    const given = url.searchParams.get("token") ?? req.headers["x-torlink-token"];
-    if (given !== opts.token) {
-      sendJson(res, 401, { error: "unauthorized" });
       return;
     }
 

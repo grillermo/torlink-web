@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { SOURCES } from "../../sources/registry";
 import type { SourceId, TorrentResult } from "../../sources/types";
-import { apiUrl } from "../api";
 
 export interface SourceState {
   loading: boolean;
@@ -107,7 +106,7 @@ export function useConcurrentSearch(query: string): ConcurrentSearchState {
       total: SOURCES.length,
     });
 
-    const es = new EventSource(apiUrl(`/api/search?q=${encodeURIComponent(query)}`));
+    const es = new EventSource(`/api/search?q=${encodeURIComponent(query)}`);
     es.addEventListener("source", (e) => {
       if (!alive) return;
       try {

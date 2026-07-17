@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the app and run it the way production should: bundled server + prebuilt
-# web assets, no dev server, no browser launch, stable token across restarts.
+# web assets, no dev server, no browser launch.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -8,7 +8,6 @@ cd "$(dirname "$0")"
 # 5173 is also the Vite dev server port, so `npm run dev` and this cannot both be
 # up at once. In production there is no Vite: this process serves API + web alone.
 PORT="${TORLINK_PORT:-5173}"
-TOKEN_FILE="${TORLINK_TOKEN_FILE:-.torlink-token}"
 
 if [ ! -d node_modules ]; then
   echo "==> installing dependencies"
@@ -18,19 +17,7 @@ fi
 echo "==> building server + web"
 npm run build
 
-# The server mints a random token when TORLINK_TOKEN is unset, which would change
-# the URL on every restart. Persist one so bookmarks and proxies keep working.
-if [ -z "${TORLINK_TOKEN:-}" ]; then
-  if [ ! -s "$TOKEN_FILE" ]; then
-    node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("hex"))' > "$TOKEN_FILE"
-    chmod 600 "$TOKEN_FILE"
-    echo "==> generated $TOKEN_FILE"
-  fi
-  TORLINK_TOKEN="$(cat "$TOKEN_FILE")"
-fi
-
 echo "==> starting torlink on 127.0.0.1:$PORT"
 export TORLINK_PORT="$PORT"
-export TORLINK_TOKEN
 export TORLINK_NO_OPEN=1
 exec node dist/index.js
