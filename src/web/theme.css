@@ -268,18 +268,14 @@ body {
 
 .result-grid {
   display: grid;
-  grid-template-columns: 2ch 3ch minmax(0, 1fr) 10ch 9ch;
+  grid-template-columns: 3ch minmax(0, 1fr) 10ch 9ch;
   gap: 1ch;
   min-width: 0;
   text-align: left;
 }
 
-.result-grid > :not(:nth-child(3)) {
+.result-grid > :not(:nth-child(2)) {
   text-align: right;
-}
-
-.result-head > :first-child {
-  text-align: left;
 }
 
 .result-row {
@@ -855,19 +851,19 @@ body {
      so size drops out. Without stats the seeders cell is empty, so the
      added-date column takes its place. */
   .result-grid {
-    grid-template-columns: 2ch 3ch minmax(0, 1fr) auto;
+    grid-template-columns: 3ch minmax(0, 1fr) auto;
     gap: var(--space-2xs);
   }
 
-  .result-grid > :nth-child(4) {
+  .result-grid > :nth-child(3) {
     display: none;
   }
 
-  .no-stats .result-grid > :nth-child(4) {
+  .no-stats .result-grid > :nth-child(3) {
     display: block;
   }
 
-  .no-stats .result-grid > :nth-child(5) {
+  .no-stats .result-grid > :nth-child(4) {
     display: none;
   }
 
