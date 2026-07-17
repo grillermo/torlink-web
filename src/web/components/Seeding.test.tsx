@@ -46,10 +46,10 @@ describe("Seeding", () => {
 
   it("selects rows by click, moves selection, and dispatches pause, resume, missing notice, and removal", () => {
     const view = renderSeeding();
-    const rows = view.getAllByRole("button");
+    const pausedRow = view.getByRole("button", { name: /Paused/ });
 
-    fireEvent.click(rows[1]!);
-    expect(rows[1]?.getAttribute("aria-selected")).toBe("true");
+    fireEvent.click(pausedRow);
+    expect(pausedRow.getAttribute("aria-selected")).toBe("true");
     fireEvent.keyDown(window, { key: "p" });
     expect(view.store.toggleSeed).toHaveBeenCalledWith("paused", "resume");
 

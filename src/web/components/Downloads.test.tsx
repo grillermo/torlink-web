@@ -39,10 +39,10 @@ describe("Downloads", () => {
 
   it("selects rows with click, enters failed details, and dispatches the download actions", () => {
     const view = renderDownloads();
-    const rows = view.getAllByRole("button");
+    const pausedRow = view.getByRole("button", { name: /Paused/ });
 
-    fireEvent.click(rows[1]!);
-    expect(rows[1]?.getAttribute("aria-selected")).toBe("true");
+    fireEvent.click(pausedRow);
+    expect(pausedRow.getAttribute("aria-selected")).toBe("true");
     fireEvent.keyDown(window, { key: "p" });
     expect(view.store.toggleDownload).toHaveBeenCalledWith("paused", "resume");
     fireEvent.keyDown(window, { key: "c" });

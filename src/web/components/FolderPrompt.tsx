@@ -65,35 +65,46 @@ export function FolderPrompt({ width, dirs, active, onActivate, onAdd, onRemove,
       <strong className="accent">download folder</strong>
       <div className="col prompt-body">
         {dirs.map((dir, index) => (
-          <div className={index === cursor && !adding ? "accent" : ""} key={dir}>
-            {index === cursor && !adding ? `${ICON.pointer} ` : "  "}{dir}{dir === active ? <span className="good"> {ICON.done}</span> : null}
+          <div className={`folder-row ${index === cursor && !adding ? "accent" : ""}`} key={dir}>
+            <button className="folder-select" onClick={() => onActivate(dir)} type="button">
+              <span className="trunc">{index === cursor && !adding ? `${ICON.pointer} ` : "  "}{dir}</span>{dir === active ? <span className="good"> {ICON.done}</span> : null}
+            </button>
+            <button aria-label={`Remove ${dir}`} className="folder-remove" onClick={() => onRemove(dir)} type="button">✕</button>
           </div>
         ))}
-        <div className={cursor === addRow && !adding ? "accent" : ""}>
-          {cursor === addRow && !adding ? `${ICON.pointer} ` : "  "}
-          {adding ? <input
-            aria-label="Add download folder"
-            className="prompt-input"
-            onChange={(event) => setValue(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                setAdding(false);
-                setValue("");
-                onAdd(value);
-              } else if (event.key === "Escape") {
-                event.preventDefault();
-                setAdding(false);
-                setValue("");
-              }
-            }}
-            placeholder="~/Downloads/torlink"
-            ref={inputRef}
-            value={value}
-          /> : <span className="dim">+ add new folder…</span>}
+        <div className={`folder-row ${cursor === addRow && !adding ? "accent" : ""}`}>
+          {adding ? <>
+            <span aria-hidden="true">{`${ICON.pointer} `}</span>
+            <input
+              aria-label="Add download folder"
+              className="prompt-input"
+              onChange={(event) => setValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  setAdding(false);
+                  setValue("");
+                  onAdd(value);
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  setAdding(false);
+                  setValue("");
+                }
+              }}
+              placeholder="~/Downloads/torlink"
+              ref={inputRef}
+              value={value}
+            />
+          </> : <button className="folder-select" onClick={() => { setCursor(addRow); setValue(""); setAdding(true); }} type="button">
+            {cursor === addRow ? `${ICON.pointer} ` : "  "}<span className="dim">+ add new folder…</span>
+          </button>}
         </div>
       </div>
-      <p className="dim prompt-hints">↵ use   {ICON.dot}   a add   {ICON.dot}   d remove   {ICON.dot}   esc cancel</p>
+      <p className="dim prompt-hints kb-only">↵ use   {ICON.dot}   a add   {ICON.dot}   d remove   {ICON.dot}   esc cancel</p>
+      <div className="prompt-actions">
+        {adding ? <button className="ghost-button" onClick={() => { setAdding(false); setValue(""); onAdd(value); }} type="button">add</button> : null}
+        <button className="ghost-button" onClick={adding ? () => { setAdding(false); setValue(""); } : onCancel} type="button">{adding ? "cancel" : "close"}</button>
+      </div>
     </section>
   );
 }

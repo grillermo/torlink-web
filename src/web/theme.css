@@ -1,4 +1,8 @@
-/* Hallmark · macrostructure: Workbench · theme: Terminal · tone: technical · anchor hue: violet · nav: N3 side rail · footer: Ft2 inline-rule · enrichment: none · pre-emit critique: P5 H4 E5 S5 R5 V5 */
+/* Hallmark · genre: atmospheric · macrostructure: Workbench · design-system: design.md · designed-as-app
+ * theme: Terminal Protocol · tone: technical · anchor hue: violet
+ * nav: N3 side rail (>=768px) / bottom tab bar (<768px) · footer: Ft2 inline-rule · enrichment: none
+ * pre-emit critique: P5 H5 E5 S5 R5 V4
+ */
 @import "../../tokens.css";
 
 * {
@@ -20,6 +24,12 @@ body {
 .logo-row,
 .workbench {
   display: flex;
+}
+
+/* A display declaration outranks the UA's [hidden] rule, so the overlay's
+   hidden workbench would otherwise still render behind it. */
+[hidden] {
+  display: none;
 }
 
 .col {
@@ -64,6 +74,14 @@ body {
 .warn { color: var(--color-warn); --bar-base-color: var(--color-warn); }
 .bad { color: var(--color-bad); --bar-base-color: var(--color-bad); }
 .fg-rule { color: var(--color-rule); }
+
+/* Panel.tsx sizes in ch/lh against an 80-column assumption. Cap the width so
+   narrow viewports never scroll sideways. */
+.panel {
+  width: var(--panel-width);
+  max-width: var(--size-full);
+  height: var(--panel-height, auto);
+}
 
 .panel-title,
 .panel-body {
@@ -412,7 +430,8 @@ body {
   min-height: 0;
   place-items: center;
   padding: var(--space-sm);
-  background: color-mix(in oklch, var(--color-bg) 72%, transparent);
+  /* Solid, not a scrim — the system rejects semi-transparent overlays. */
+  background: var(--color-bg);
 }
 
 .prompt-modal,
@@ -482,6 +501,9 @@ body {
 .splash,
 .stopped {
   display: grid;
+  /* An auto track sizes to the item's max-content, which makes the item's own
+     max-width:100% circular. Pin the track to the container instead. */
+  grid-template-columns: minmax(0, 1fr);
   min-height: var(--size-full);
   place-items: center;
   padding: var(--space-sm);
@@ -489,7 +511,14 @@ body {
 }
 
 .splash-content {
+  width: var(--size-full);
   align-items: center;
+}
+
+/* align-items:center gives every child its max-content width, so the tagline
+   and the 62ch search panel would never wrap or shrink on a phone. */
+.splash-content > * {
+  max-width: var(--size-full);
 }
 
 .splash-description {
@@ -508,6 +537,403 @@ body {
 
 .splash-footer {
   margin-top: var(--space-sm);
+}
+
+.splash-browse {
+  margin-top: var(--space-sm);
+}
+
+/* ── Touch chrome ──────────────────────────────────────────────────────────
+   Chips and the tab bar are the mobile restatement of the side rail. Both are
+   display:none above the breakpoint — the rail owns navigation there. */
+
+.filter-chips,
+.tab-bar {
+  display: none;
+}
+
+.chip {
+  min-height: var(--tap-target);
+  border: var(--rule-thin) solid var(--color-rule);
+  border-radius: var(--radius-none);
+  padding-inline: var(--space-xs);
+  background: transparent;
+  color: var(--color-alt);
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.chip:hover:not(:disabled) {
+  border-color: var(--color-rule-bright);
+  color: var(--color-text);
+}
+
+.chip.selected {
+  border-color: var(--color-accent);
+  box-shadow: var(--glow-accent);
+  color: var(--color-bright);
+}
+
+.chip:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.tab-button {
+  display: flex;
+  min-height: var(--tab-bar-height);
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3xs);
+  border: 0;
+  border-radius: var(--radius-none);
+  padding: var(--space-3xs) var(--space-2xs);
+  background: transparent;
+  color: var(--color-rule-bright);
+  cursor: pointer;
+  font: inherit;
+}
+
+.tab-glyph {
+  font-size: var(--text-lg);
+  line-height: 1;
+}
+
+.tab-label {
+  font-size: var(--text-label);
+  letter-spacing: var(--track-label);
+  white-space: nowrap;
+}
+
+.tab-button.selected {
+  background: var(--color-panel-high);
+  color: var(--color-bright);
+}
+
+.tab-button:active:not(:disabled) {
+  color: var(--color-text);
+}
+
+/* ── Settings sheet ────────────────────────────────────────────────────── */
+
+.settings-sheet {
+  width: min(60ch, 100%);
+}
+
+.settings-list {
+  gap: var(--space-3xs);
+  margin-top: var(--space-2xs);
+}
+
+.settings-item {
+  display: flex;
+  min-height: var(--tap-target);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  border: var(--rule-thin) solid var(--color-rule);
+  border-radius: var(--radius-none);
+  padding-inline: var(--space-2xs);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+}
+
+.settings-item:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  box-shadow: var(--glow-accent);
+}
+
+.settings-item:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.settings-label {
+  flex: 0 0 auto;
+}
+
+.settings-value {
+  min-width: 0;
+  text-align: right;
+}
+
+.settings-actions {
+  display: flex;
+  gap: var(--space-2xs);
+  margin-top: var(--space-sm);
+}
+
+.ghost-button {
+  min-height: var(--tap-target);
+  border: var(--rule-thin) solid currentcolor;
+  border-radius: var(--radius-none);
+  padding-inline: var(--space-xs);
+  background: transparent;
+  color: var(--color-accent);
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.ghost-button:hover:not(:disabled) {
+  box-shadow: var(--glow-accent);
+}
+
+.ghost-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* ── Row action strips ─────────────────────────────────────────────────────
+   The touch route to a row's keybindings: a strip of ghost buttons that
+   follows the selected row. Present at every width — on desktop it's the
+   mouse route to the same actions. */
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin-block: var(--space-3xs) var(--space-2xs);
+}
+
+/* Sort headers are buttons dressed as the header text they replace. */
+.sort-button {
+  border: 0;
+  padding: var(--space-0);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+}
+
+.sort-button:hover {
+  color: var(--color-text);
+}
+
+.recent-title-row {
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-top: 1lh;
+}
+
+.folder-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.folder-select {
+  display: flex;
+  min-width: 0;
+  min-height: var(--tap-target);
+  flex: 1;
+  align-items: center;
+  border: 0;
+  padding: var(--space-0);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+}
+
+.folder-select:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.folder-remove {
+  flex: 0 0 auto;
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
+  border: 0;
+  padding: var(--space-0);
+  background: transparent;
+  color: var(--color-rule-bright);
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+}
+
+.folder-remove:hover:not(:disabled) {
+  color: var(--color-bad);
+}
+
+.prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin-top: var(--space-sm);
+}
+
+/* ── Below the rail breakpoint ─────────────────────────────────────────────
+   The rail and the keyboard hint footer both assume a keyboard. Neither
+   survives here: the rail becomes chips + tab bar, the footer just goes. */
+
+@media (max-width: 47.9375rem) {
+  .app-shell {
+    /* Clear the fixed tab bar, plus the home indicator on iOS. */
+    padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
+  }
+
+  .sidebar-slot,
+  .footer-slot {
+    display: none;
+  }
+
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    margin-top: var(--space-2xs);
+  }
+
+  .tab-bar {
+    position: fixed;
+    z-index: 1;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    border-top: var(--rule-thin) solid var(--color-rule);
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--color-bg-sunk);
+  }
+
+  /* The ASCII box drawing is sized in ch from a fixed 80-col assumption, so it
+     can't wrap gracefully. Below the breakpoint the panel keeps its label and
+     takes a real 1px border instead. */
+  .panel-title > span {
+    display: none;
+  }
+
+  /* The fixed lh height assumes the ASCII title row; the bordered label is
+     taller, so let the panel size to its content instead. */
+  .panel {
+    height: auto;
+  }
+
+  /* Rule draws 80 box-drawing glyphs, which offer no line-break opportunity and
+     so force the page 366px wide. Collapse the glyphs, keep the line. */
+  .fg-rule {
+    height: 0;
+    border-top: var(--rule-thin) solid currentcolor;
+    overflow: hidden;
+  }
+
+  .panel-title {
+    padding: var(--space-3xs) var(--space-2xs);
+    border: var(--rule-thin) solid currentcolor;
+    border-bottom: 0;
+    font-size: var(--text-label);
+    letter-spacing: var(--track-label);
+    text-transform: uppercase;
+  }
+
+  .panel-body {
+    border-top: 0;
+  }
+
+  /* Results stays a table — it's a scan-and-pick list. Seeders drop out;
+     the name column needs the room more than the ratio does. */
+  .result-grid {
+    grid-template-columns: 2ch 3ch minmax(0, 1fr) auto auto;
+    gap: var(--space-2xs);
+  }
+
+  .result-grid > :nth-child(5) {
+    display: none;
+  }
+
+  .result-row {
+    min-height: var(--tap-target);
+    align-items: center;
+  }
+
+  /* Downloads and seeding become cards — a progress bar and five stats can't
+     hold a row at this width. The bar is a fixed run of ASCII cells, so it
+     can't shrink into a column: it gets a row to itself. */
+  .download-row,
+  .seeding-row {
+    grid-template-areas:
+      "ptr   name  name"
+      "stat  size  src"
+      "prog  prog  prog"
+      "stats stats stats";
+    grid-template-columns: 2ch minmax(0, 1fr) auto;
+    gap: var(--space-3xs) var(--space-2xs);
+    border: var(--rule-thin) solid var(--color-rule);
+    padding: var(--space-2xs);
+  }
+
+  .download-row.selected,
+  .seeding-row.selected {
+    border-color: var(--color-accent);
+    box-shadow: var(--glow-accent);
+  }
+
+  .download-row > :nth-child(1),
+  .seeding-row > :nth-child(1) { grid-area: ptr; }
+  .download-row > :nth-child(2),
+  .seeding-row > :nth-child(2) { grid-area: stat; }
+  .download-row > :nth-child(3),
+  .seeding-row > :nth-child(3) { grid-area: name; }
+  .download-row > :nth-child(4),
+  .seeding-row > :nth-child(4) { grid-area: size; text-align: left; }
+  .download-row > :nth-child(5) { grid-area: src; text-align: right; }
+  .download-row > .download-progress { grid-area: prog; }
+  .download-row > .download-progress + .trunc { grid-area: stats; text-align: left; }
+
+  /* Rows without a progress bar — recent downloads, seeds — hand the bar's row
+     to their trailing stat instead. */
+  .download-recent-row > :nth-child(5) { grid-area: prog; text-align: left; }
+  .download-recent-row > :nth-child(6) { grid-area: src; text-align: right; }
+  .seeding-row > :nth-child(5) { grid-area: prog; text-align: left; }
+  .seeding-row > :nth-child(6) { grid-area: src; text-align: right; }
+
+  /* Column headers describe a table; the cards carry their own labels. */
+  .seeding-head {
+    display: none;
+  }
+
+  .help-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .help-hint {
+    grid-template-columns: 10ch minmax(0, 1fr);
+  }
+
+  /* Keyboard hint lines describe keys that don't exist here. */
+  .kb-only {
+    display: none;
+  }
+
+  /* Prompts become bottom sheets — thumb reach beats centring. */
+  .overlay-slot {
+    align-items: end;
+    padding: var(--space-0);
+  }
+
+  .prompt-modal,
+  .help-overlay,
+  .error-detail {
+    width: var(--size-full);
+    max-height: 85vh;
+    margin: var(--space-0);
+    border-inline: 0;
+    border-bottom: 0;
+    overflow-y: auto;
+  }
 }
 
 html,

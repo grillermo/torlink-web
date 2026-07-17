@@ -1,6 +1,16 @@
 [
   {
     "date": "2026-07-16",
+    "scope": "app",
+    "macrostructure": "Workbench",
+    "theme": "Terminal Protocol",
+    "theme_axes": "dark / mono / violet",
+    "enrichment": "none",
+    "design_system": "design.md",
+    "brief": "Torlink mobile-first redesign to the Stitch Terminal Protocol reference: rail collapses to a bottom tab bar under 768px, tables reflow to cards, JetBrains Mono bundled"
+  },
+  {
+    "date": "2026-07-16",
     "macrostructure": "Workbench",
     "theme": "Terminal",
     "enrichment": "none",

@@ -8,6 +8,7 @@ import { wrapStep } from "../move";
 import { useStore } from "../store";
 import { Panel } from "./Panel";
 import { ProgressBar } from "./ProgressBar";
+import { RowActions, type RowAction } from "./RowActions";
 
 const WIDTH = 80;
 
@@ -104,13 +105,42 @@ export function Downloads() {
   const enterRecent = (item: HistoryItem): void => {
     startDownload({ id: item.id, name: item.name, magnet: item.magnet, source: item.source, sizeBytes: item.sizeBytes });
   };
+  const activeActions = (item: QueueItem): RowAction[] => item.status === "failed"
+    ? [
+        { label: "error", onPress: () => showError(item) },
+        { label: "retry", onPress: retryFailed },
+        { label: "remove", tone: "bad", onPress: () => cancelDownload(item.id) },
+      ]
+    : [
+        { label: item.status === "paused" ? "resume" : "pause", onPress: () => toggleDownload(item.id, item.status === "paused" ? "resume" : "pause") },
+        { label: "cancel", tone: "bad", onPress: () => cancelDownload(item.id) },
+      ];
+  const recentActions = (item: HistoryItem): RowAction[] => [
+    { label: "download again", onPress: () => enterRecent(item) },
+    { label: "remove", tone: "bad", onPress: () => removeHistory(item.id) },
+  ];
 
   return <div className="col downloads-view">
     <Panel title="downloads" width={WIDTH} focused={focused} count={active.length ? `(${active.length})` : undefined}>
       {total === 0 ? <span className="dim">No downloads yet. Find something and press d to grab it.</span> : <div className="col downloads-list">
-        {active.map((item, index) => <ActiveRow key={item.id} item={item} selected={index === clamped} focused={focused} rowRef={index === clamped ? selectedRow : undefined} onSelect={() => select(index)} onEnter={enterActive} />)}
-        {recent.length ? <span className="dim downloads-recent-title">{`Recently downloaded${recent.length > 1 ? `  (${recent.length})` : ""}`}</span> : null}
-        {recent.map((item, index) => <RecentRow key={item.id} item={item} selected={active.length + index === clamped} focused={focused} rowRef={active.length + index === clamped ? selectedRow : undefined} onSelect={() => select(active.length + index)} onEnter={enterRecent} />)}
+        {active.map((item, index) => {
+          const selected = index === clamped;
+          return <div className="col" key={item.id}>
+            <ActiveRow item={item} selected={selected} focused={focused} rowRef={selected ? selectedRow : undefined} onSelect={() => select(index)} onEnter={enterActive} />
+            {selected && focused ? <RowActions actions={activeActions(item)} label="Download actions" /> : null}
+          </div>;
+        })}
+        {recent.length ? <span className="row recent-title-row">
+          <span className="dim">{`Recently downloaded${recent.length > 1 ? `  (${recent.length})` : ""}`}</span>
+          <button className="ghost-button" onClick={clearHistory} type="button">clear all</button>
+        </span> : null}
+        {recent.map((item, index) => {
+          const selected = active.length + index === clamped;
+          return <div className="col" key={item.id}>
+            <RecentRow item={item} selected={selected} focused={focused} rowRef={selected ? selectedRow : undefined} onSelect={() => select(active.length + index)} onEnter={enterRecent} />
+            {selected && focused ? <RowActions actions={recentActions(item)} label="Recent download actions" /> : null}
+          </div>;
+        })}
       </div>}
     </Panel>
   </div>;

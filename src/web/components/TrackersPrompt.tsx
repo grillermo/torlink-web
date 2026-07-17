@@ -46,8 +46,12 @@ export function TrackersPrompt({ width, value, onSubmit, onCancel }: TrackersPro
         ref={inputRef}
         value={text}
       /></div>
-      <p className="dim prompt-hints">↵ save     {ICON.dot}     esc cancel</p>
+      <p className="dim prompt-hints kb-only">↵ save     {ICON.dot}     esc cancel</p>
       <p className="dim prompt-notice">Separate with commas or spaces. Empty saves an empty list. Applies to new adds.</p>
+      <div className="prompt-actions">
+        <button className="ghost-button" onClick={() => onSubmit(parseTrackers(text))} type="button">save</button>
+        <button className="ghost-button" onClick={onCancel} type="button">cancel</button>
+      </div>
     </section>
   );
 }

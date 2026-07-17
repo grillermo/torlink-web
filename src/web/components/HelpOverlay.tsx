@@ -1,6 +1,6 @@
 import { HELP_GROUPS } from "../keymap";
 
-export function HelpOverlay() {
+export function HelpOverlay({ onClose }: { onClose(): void }) {
   return (
     <section className="col help-overlay" role="dialog" aria-label="Keyboard">
       <strong className="accent">Keyboard</strong>
@@ -12,7 +12,10 @@ export function HelpOverlay() {
           </section>
         ))}
       </div>
-      <p className="dim prompt-notice">Your downloaded files always stay on disk.<br />Press ? or esc to close</p>
+      <p className="dim prompt-notice">Your downloaded files always stay on disk.<br /><span className="kb-only">Press ? or esc to close</span></p>
+      <div className="prompt-actions">
+        <button className="ghost-button" onClick={onClose} type="button">close</button>
+      </div>
     </section>
   );
 }

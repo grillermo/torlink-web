@@ -19,7 +19,7 @@ describe("Panel", () => {
     expect(view.getByText("ready")).toBeTruthy();
     const panel = view.container.querySelector(".panel");
     expect(panel?.classList.contains("focused")).toBe(true);
-    expect(panel?.getAttribute("style")).toContain("width: 10ch");
+    expect(panel?.getAttribute("style")).toContain("--panel-width: 10ch");
   });
 });
 

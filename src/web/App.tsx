@@ -14,7 +14,9 @@ import { HelpOverlay } from "./components/HelpOverlay";
 import { Logo } from "./components/Logo";
 import { Rule } from "./components/Rule";
 import { Results } from "./components/Results";
+import { SettingsSheet, type SettingsTarget } from "./components/SettingsSheet";
 import { Sidebar } from "./components/Sidebar";
+import { TabBar } from "./components/TabBar";
 import { TabTitle } from "./components/TabTitle";
 import { ThrottlePrompt } from "./components/ThrottlePrompt";
 import { TrackersPrompt } from "./components/TrackersPrompt";
@@ -50,6 +52,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
   const [seedFocus, setSeedFocus] = useState<SeedFocus | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [prompt, setPrompt] = useState<Prompt | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const noticeSequence = useRef(0);
   const [noticeState, setNoticeState] = useState<{ text: string | null; sequence: number }>({
     text: null,
@@ -227,7 +230,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
       setRegion,
       setView,
       captureMode,
-      editingPrompt: prompt !== null,
+      editingPrompt: prompt !== null || settingsOpen,
       errorItem,
       clearErrorItem: () => setErrorItem(null),
       showHelp,
@@ -240,7 +243,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
     });
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [captureMode, errorItem, pasteFromClipboard, prompt, quitAll, region, showHelp, state, view]);
+  }, [captureMode, errorItem, pasteFromClipboard, prompt, quitAll, region, settingsOpen, showHelp, state, view]);
 
   const store = useMemo<Store | null>(() => state ? {
     config: state.config,
@@ -251,7 +254,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
     submitQuery,
     section,
     setSection,
-    region: showHelp || prompt || errorItem ? "help" : region,
+    region: showHelp || prompt || errorItem || settingsOpen ? "help" : region,
     setRegion,
     captureMode,
     setCaptureMode,
@@ -273,9 +276,14 @@ export function App({ children }: { children?: ReactNode } = {}) {
     quitAll,
   } : null, [
     cancelDownload, captureMode, clearHistory, copyMagnet, downloadFocus, errorItem, noticeState.text,
-    prompt, query, quitAll, region, removeHistory, retryFailed, section, seedFocus, showHelp,
-    startDownload, state, submitQuery, toggleDownload, toggleSeed, view,
+    prompt, query, quitAll, region, removeHistory, retryFailed, section, seedFocus, settingsOpen,
+    showHelp, startDownload, state, submitQuery, toggleDownload, toggleSeed, view,
   ]);
+
+  const openSettings = useCallback((target: SettingsTarget): void => {
+    setSettingsOpen(false);
+    setPrompt(target);
+  }, []);
 
   if (stopped) {
     return <main className="stopped">torlink stopped — you can close this tab.</main>;
@@ -293,7 +301,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
     );
   }
 
-  const overlay = showHelp ? "help" : prompt ?? (errorItem ? "error" : null);
+  const overlay = showHelp ? "help" : prompt ?? (errorItem ? "error" : settingsOpen ? "settings" : null);
 
   return (
     <StoreContext.Provider value={store}>
@@ -306,8 +314,12 @@ export function App({ children }: { children?: ReactNode } = {}) {
         <Rule width={80} />
         {overlay ? (
           <section className="overlay-slot" data-overlay={overlay}>
-            {errorItem ? <ErrorDetail item={errorItem} /> : null}
-            {showHelp ? <HelpOverlay /> : null}
+            {errorItem ? <ErrorDetail
+              item={errorItem}
+              onClose={() => setErrorItem(null)}
+              onRetry={() => { retryFailed(); setErrorItem(null); }}
+            /> : null}
+            {showHelp ? <HelpOverlay onClose={() => setShowHelp(false)} /> : null}
             {prompt === "folder" ? <FolderPrompt
               active={state.config.downloadDir}
               dirs={state.config.downloadDirs}
@@ -322,6 +334,10 @@ export function App({ children }: { children?: ReactNode } = {}) {
               onSubmit={submitTrackers}
               value={state.config.trackers}
               width={60}
+            /> : null}
+            {settingsOpen ? <SettingsSheet
+              onCancel={() => setSettingsOpen(false)}
+              onSelect={openSettings}
             /> : null}
             {prompt === "download" || prompt === "upload" ? <ThrottlePrompt
               direction={prompt}
@@ -341,6 +357,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
         <footer className="footer-slot" hidden={overlay !== null}>
           <Footer hints={footerHints(region, section, downloadFocus, seedFocus)} />
         </footer>
+        <TabBar onOpenSettings={() => setSettingsOpen(true)} settingsOpen={settingsOpen} />
       </main>
     </StoreContext.Provider>
   );

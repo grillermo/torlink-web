@@ -7,6 +7,7 @@ import { wrapStep } from "../move";
 import { ICON } from "../theme";
 import { useStore } from "../store";
 import { Panel } from "./Panel";
+import { RowActions } from "./RowActions";
 
 const WIDTH = 80;
 
@@ -88,6 +89,15 @@ export function Seeding() {
   const totalShared = state.seeds.reduce((sum, seed) => sum + seed.uploaded, 0);
 
   const select = (index: number): void => { setCursor(index); setRegion("content"); };
+  const toggle = (item: HistoryItem): void => {
+    const seed = seeds.get(item.id);
+    toggleSeed?.(item.id, seed?.status === "seeding" ? "pause" : "resume");
+    if (seed?.status === "missing") setNotice(`${ICON.warn} That file isn't on disk anymore.`);
+  };
+  const toggleLabel = (item: HistoryItem): string => {
+    const status = seeds.get(item.id)?.status;
+    return status === "seeding" ? "pause" : status === "missing" ? "retry" : "resume";
+  };
 
   return <div className="col seeding-view">
     <Panel title="seeding" width={WIDTH} focused={focused} count={seeding.length ? `(${seeding.length})` : undefined}>
@@ -97,7 +107,16 @@ export function Seeding() {
           : <span className="dim">Downloads seed automatically when they finish. Press p to pause or resume any of them.</span>}
         <div className="col seeding-list">
           <div className="seeding-grid seeding-head dim b"><span /><span /><span>Name</span><span>Size</span><span>Status</span><span>Src</span></div>
-          {history.map((item, index) => <SeedRow key={item.id} item={item} seed={seeds.get(item.id)} selected={index === clamped} focused={focused} rowRef={index === clamped ? selectedRow : undefined} onSelect={() => select(index)} />)}
+          {history.map((item, index) => {
+            const selected = index === clamped;
+            return <div className="col" key={item.id}>
+              <SeedRow item={item} seed={seeds.get(item.id)} selected={selected} focused={focused} rowRef={selected ? selectedRow : undefined} onSelect={() => select(index)} />
+              {selected && focused ? <RowActions actions={[
+                { label: toggleLabel(item), onPress: () => toggle(item) },
+                { label: "remove", tone: "bad", onPress: () => removeHistory(item.id) },
+              ]} label="Seed actions" /> : null}
+            </div>;
+          })}
         </div>
       </>}
     </Panel>

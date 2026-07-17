@@ -34,6 +34,14 @@ export function nextSort(current: Sort): Sort {
   return SORT_CYCLE[(i + 1) % SORT_CYCLE.length]!;
 }
 
+/** Header-tap sorting: first tap sorts a field ascending, the next flips it. */
+export function toggleSort(current: Sort, field: SortField): Sort {
+  if (current !== "none" && current.field === field) {
+    return { field, dir: current.dir === "asc" ? "desc" : "asc" };
+  }
+  return { field, dir: "asc" };
+}
+
 export function sortArrow(dir: SortDir): string {
   return dir === "asc" ? "▴" : "▾";
 }

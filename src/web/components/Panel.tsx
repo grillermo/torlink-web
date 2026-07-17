@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 interface PanelProps {
   title: string;
@@ -15,10 +15,13 @@ export function Panel({ title, width, focused, count, height, children }: PanelP
   const label = count ? `${cap} ${count}` : cap;
   const fill = Math.max(0, w - 5 - label.length);
 
+  // Sizing goes through custom properties, not width/height directly, so the
+  // stylesheet can drop the fixed ch/lh box on narrow screens without fighting
+  // an inline style.
   return (
     <section
       className={`col panel ${focused ? "focused" : ""}`}
-      style={{ width: `${w}ch`, ...(height ? { height: `${height}lh` } : {}) }}
+      style={{ "--panel-width": `${w}ch`, ...(height ? { "--panel-height": `${height}lh` } : {}) } as CSSProperties}
     >
       <div className="panel-title"><span>╭─ </span><strong>{label}</strong><span>{` ${"─".repeat(fill)}╮`}</span></div>
       <div className="col panel-body px">{children}</div>

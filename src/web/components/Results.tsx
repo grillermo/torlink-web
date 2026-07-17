@@ -3,11 +3,13 @@ import { getSource, SOURCES } from "../../sources/registry";
 import type { Source, TorrentResult } from "../../sources/types";
 import { cleanText, formatBytes, formatRelative, truncate } from "../../util/format";
 import { wrapStep } from "../move";
-import { nextSort, sortArrow, sortLabel, sortResults, type Sort, type SortField } from "../sort";
+import { nextSort, sortArrow, sortLabel, sortResults, toggleSort, type Sort, type SortField } from "../sort";
 import { ICON } from "../theme";
 import { useConcurrentSearch } from "../hooks/useConcurrentSearch";
 import { CATEGORIES, useStore } from "../store";
+import { FilterChips } from "./FilterChips";
 import { Panel } from "./Panel";
+import { RowActions } from "./RowActions";
 import { Rule } from "./Rule";
 import { SearchBar } from "./SearchBar";
 import { Spinner } from "./Spinner";
@@ -36,7 +38,12 @@ function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return <div className="row result-detail-row"><span className="dim result-detail-label">{label}</span><span className="trunc">{value}</span></div>;
 }
 
-function Detail({ result }: { result: TorrentResult }) {
+function Detail({ result, onDownload, onCopy, onBack }: {
+  result: TorrentResult;
+  onDownload(): void;
+  onCopy(): void;
+  onBack(): void;
+}) {
   const source = sourceStyle(result.source);
   const health = result.seeders || result.leechers
     ? <><span className={result.seeders > 0 ? "good b" : ""}>{result.seeders}</span><span className="dim">{` seeders ${ICON.dot} ${result.leechers} leechers`}</span></>
@@ -52,7 +59,12 @@ function Detail({ result }: { result: TorrentResult }) {
       <DetailRow label="Hash" value={<span className="alt">{result.infoHash}</span>} />
       <DetailRow label="Magnet" value={<span className="alt">{result.magnet}</span>} />
     </div>
-    <p className="result-actions"><span className="accent b">d</span> Download <span className="dim">{` ${ICON.dot} `}</span><span className="accent b">y</span> Copy magnet <span className="dim">{` ${ICON.dot} `}</span><span className="alt">esc</span><span className="dim"> back</span></p>
+    <p className="result-actions kb-only"><span className="accent b">d</span> Download <span className="dim">{` ${ICON.dot} `}</span><span className="accent b">y</span> Copy magnet <span className="dim">{` ${ICON.dot} `}</span><span className="alt">esc</span><span className="dim"> back</span></p>
+    <RowActions actions={[
+      { label: "download", onPress: onDownload },
+      { label: "copy magnet", onPress: onCopy },
+      { label: "back", onPress: onBack },
+    ]} label="Result actions" />
   </div>;
 }
 
@@ -145,21 +157,41 @@ export function Results() {
     return <span className="dim">{`${browsing ? "newest across all sources" : `${results.length} result${results.length === 1 ? "" : "s"}`}${notice}${sortNote}`}</span>;
   };
   const sortMark = (field: SortField, label: string): ReactNode => sort === "none" || sort.field !== field ? label : <><span className="accent b">{sortArrow(sort.dir)}</span>{label}</>;
+  const sortHeader = (field: SortField, label: string): ReactNode => (
+    <button className="sort-button" onClick={() => setSort((current) => toggleSort(current, field))} type="button">
+      {sortMark(field, label)}
+    </button>
+  );
   const openDetail = (result: TorrentResult): void => { setDetail(result); setMode("detail"); };
+  const closeDetail = (): void => { setMode("list"); setDetail(null); };
+  const download = (result: TorrentResult): void => startDownload({ id: result.infoHash, name: result.name, magnet: result.magnet, source: result.source, sizeBytes: result.sizeBytes });
 
   return <div className="col results-view">
     <SearchBar width={WIDTH} value={query} editing={mode === "search"} placeholder={PLACEHOLDER} onSubmit={(value) => { setMode("list"); submitQuery(value); }} onExitDown={() => setMode("list")} onExitLeft={() => setRegion("sidebar")} />
+    <FilterChips />
     <div className="mt"><Panel title={mode === "detail" ? "details" : browsing ? "latest" : "results"} width={WIDTH} focused={focused && mode !== "search"} count={mode === "detail" || results.length === 0 ? undefined : `(${results.length})`}>
-      {mode === "detail" && detail ? <Detail result={detail} /> : <>
+      {mode === "detail" && detail ? <Detail
+        onBack={closeDetail}
+        onCopy={() => copyMagnet({ name: detail.name, magnet: detail.magnet })}
+        onDownload={() => download(detail)}
+        result={detail}
+      /> : <>
         <div className="result-status">{status()}</div>
         {results.length > 0 ? <div className={`col result-list ${showStats ? "" : "no-stats"}`}>
-          <div className="result-grid result-head dim b"><span /><span>#</span><span>Name</span><span>{showStats ? sortMark("size", "Size") : "Added"}</span><span>{showStats ? sortMark("seeders", "Seed:Lch") : ""}</span><span>{sortMark("source", "Src")}</span></div>
+          <div className="result-grid result-head dim b"><span /><span>#</span><span>Name</span><span>{showStats ? sortHeader("size", "Size") : "Added"}</span><span>{showStats ? sortHeader("seeders", "Seed:Lch") : ""}</span><span>{sortHeader("source", "Src")}</span></div>
           {results.map((result, index) => {
             const selected = index === clamped;
             const source = sourceStyle(result.source);
-            return <button key={result.infoHash} ref={selected ? selectedRow : undefined} className={`result-grid result-row ${selected && focused ? "selected" : ""}`} aria-selected={selected} onClick={() => { setCursor(index); setRegion("content"); }} onDoubleClick={() => openDetail(result)} type="button">
-              <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className="dim">{index + 1}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(result.name)}</span><span className="dim">{showStats ? (result.sizeBytes > 0 ? formatBytes(result.sizeBytes) : "-") : (formatRelative(result.added) || "-")}</span><span className={result.seeders > 0 ? "good" : "dim"}>{showStats ? (result.seeders || result.leechers ? `${result.seeders}:${result.leechers}` : "-") : ""}</span><span className={selected && focused ? source.tone : `dim ${source.tone}`}>{source.tag}</span>
-            </button>;
+            return <div className="col" key={result.infoHash}>
+              <button ref={selected ? selectedRow : undefined} className={`result-grid result-row ${selected && focused ? "selected" : ""}`} aria-selected={selected} onClick={() => { if (selected && focused) { openDetail(result); return; } setCursor(index); setRegion("content"); }} onDoubleClick={() => openDetail(result)} type="button">
+                <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className="dim">{index + 1}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(result.name)}</span><span className="dim">{showStats ? (result.sizeBytes > 0 ? formatBytes(result.sizeBytes) : "-") : (formatRelative(result.added) || "-")}</span><span className={result.seeders > 0 ? "good" : "dim"}>{showStats ? (result.seeders || result.leechers ? `${result.seeders}:${result.leechers}` : "-") : ""}</span><span className={selected && focused ? source.tone : `dim ${source.tone}`}>{source.tag}</span>
+              </button>
+              {selected && focused ? <RowActions actions={[
+                { label: "download", onPress: () => download(result) },
+                { label: "copy", onPress: () => copyMagnet({ name: result.name, magnet: result.magnet }) },
+                { label: "details", onPress: () => openDetail(result) },
+              ]} label="Result actions" /> : null}
+            </div>;
           })}
         </div> : null}
       </>}

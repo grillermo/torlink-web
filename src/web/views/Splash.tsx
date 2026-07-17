@@ -32,7 +32,10 @@ export function Splash() {
           width={62}
         />
       </div>
-      <p className="splash-footer">
+      <div className="splash-browse">
+        <button className="ghost-button" onClick={() => submitQuery("")} type="button">browse everything</button>
+      </div>
+      <p className="splash-footer kb-only">
         <span className="alt">↵</span><span className="dim"> search</span>
         <span className="dim">{`  ${ICON.dot}  empty `}</span><span className="alt">↵</span><span className="dim"> browse</span>
         <span className="dim">{`  ${ICON.dot}  `}</span><span className="alt">^c</span><span className="dim"> quit</span>

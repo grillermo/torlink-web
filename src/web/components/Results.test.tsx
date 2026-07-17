@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AppState } from "../../server/state";
 import type { TorrentResult } from "../../sources/types";
@@ -37,7 +37,13 @@ function renderResults(overrides: Partial<Store> = {}) {
     seedFocus: null, setSeedFocus: vi.fn(), startDownload: vi.fn(), cancelDownload: vi.fn(), toggleDownload: vi.fn(), retryFailed: vi.fn(), removeHistory: vi.fn(), clearHistory: vi.fn(), copyMagnet: vi.fn(),
     showError: vi.fn(), notice: null, setNotice: vi.fn(), quitAll: vi.fn(), ...overrides,
   };
-  return { ...render(<StoreContext.Provider value={store}><Results /></StoreContext.Provider>), store };
+  const view = render(<StoreContext.Provider value={store}><Results /></StoreContext.Provider>);
+  /** Scoped to the rows — the category chips are buttons with the same names. */
+  const rowsNamed = (name: RegExp): HTMLElement[] => {
+    const list = view.container.querySelector(".result-list");
+    return list ? within(list as HTMLElement).getAllByRole("button", { name }) : [];
+  };
+  return { ...view, rowsNamed, store };
 }
 
 afterEach(() => {
@@ -54,7 +60,7 @@ describe("Results", () => {
     expect(view.queryByText("Game")).toBeNull();
     fireEvent.keyDown(window, { key: "s" });
     fireEvent.keyDown(window, { key: "s" });
-    expect(view.getAllByRole("button", { name: /Movie/ }).map((row) => row.textContent)).toEqual([
+    expect(view.rowsNamed(/Movie/).map((row) => row.textContent)).toEqual([
       expect.stringContaining("Movie large"),
       expect.stringContaining("Movie small"),
     ]);
@@ -74,7 +80,7 @@ describe("Results", () => {
   it("selects rows by click, enters on double click, and cleans up inactive keyboard handling", () => {
     search.current = { ...search.current, results };
     const view = renderResults();
-    const rows = view.getAllByRole("button", { name: /Movie|Game/ });
+    const rows = view.rowsNamed(/Movie|Game/);
     fireEvent.click(rows[1]!);
     expect(rows[1]?.getAttribute("aria-selected")).toBe("true");
     fireEvent.keyDown(window, { key: "d" });
