@@ -27,7 +27,7 @@ function renderSeeding(overrides: Partial<Store> = {}) {
     section: "seeding", setSection: vi.fn(), region: "content", setRegion: vi.fn(),
     captureMode: "none", setCaptureMode: vi.fn(), downloadFocus: null, setDownloadFocus: vi.fn(),
     seedFocus: null, setSeedFocus: vi.fn(), startDownload: vi.fn(), cancelDownload: vi.fn(), toggleDownload: vi.fn(), retryFailed: vi.fn(), removeHistory: vi.fn(), clearHistory: vi.fn(), copyMagnet: vi.fn(),
-    toggleSeed: vi.fn(), showError: vi.fn(), notice: null, setNotice: vi.fn(), quitAll: vi.fn(), ...overrides,
+    toggleSeed: vi.fn(), showError: vi.fn(), notice: null, setNotice: vi.fn(), ...overrides,
   } as unknown as Store & { toggleSeed: ReturnType<typeof vi.fn> };
   return { ...render(<StoreContext.Provider value={store}><Seeding /></StoreContext.Provider>), store };
 }

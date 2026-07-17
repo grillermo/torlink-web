@@ -2,24 +2,15 @@ import { sourcesByGroup } from "../../sources/registry";
 import { ICON } from "../theme";
 import { Logo } from "../components/Logo";
 import { SearchBar } from "../components/SearchBar";
-import { isPlainShortcut } from "../keyboard";
 import { useStore } from "../store";
 
 const CATEGORIES = sourcesByGroup().map((group) => group.group.toLowerCase()).join(`  ${ICON.dot}  `);
 
 export function Splash() {
-  const { quitAll, submitQuery } = useStore();
+  const { submitQuery } = useStore();
 
   return (
-    <section
-      className="col splash-content"
-      onKeyDown={(event) => {
-        if (event.key === "Escape" || (isPlainShortcut(event.nativeEvent) && event.key.toLowerCase() === "c")) {
-          event.preventDefault();
-          quitAll();
-        }
-      }}
-    >
+    <section className="col splash-content">
       <Logo />
       <p className="splash-description">A curated, local web app for torrent downloads.</p>
       <p className="dim splash-categories">{CATEGORIES}</p>
@@ -38,7 +29,6 @@ export function Splash() {
       <p className="splash-footer kb-only">
         <span className="alt">↵</span><span className="dim"> search</span>
         <span className="dim">{`  ${ICON.dot}  empty `}</span><span className="alt">↵</span><span className="dim"> browse</span>
-        <span className="dim">{`  ${ICON.dot}  `}</span><span className="alt">^c</span><span className="dim"> quit</span>
       </p>
     </section>
   );

@@ -51,7 +51,6 @@ interface Ctx {
   base: string;
   server: Server;
   core: CoreInstance;
-  quits: number;
   webRoot: string;
 }
 
@@ -62,12 +61,8 @@ async function start(): Promise<Ctx> {
   const core = await Core.boot();
   const webRoot = mkdtempSync(join(tmpdir(), "torlink-web-"));
   writeFileSync(join(webRoot, "index.html"), "<p>torlink</p>");
-  const ctx: Partial<Ctx> = { core, quits: 0, webRoot };
-  const server = createTorlinkServer({
-    core,
-    webRoot,
-    onQuit: () => { ctx.quits = (ctx.quits ?? 0) + 1; },
-  });
+  const ctx: Partial<Ctx> = { core, webRoot };
+  const server = createTorlinkServer({ core, webRoot });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const addr = server.address();
   if (!addr || typeof addr === "string") throw new Error("no port");
@@ -147,12 +142,12 @@ describe("torlink http server", () => {
     expect(res.status).toBe(413);
   });
 
-  it("quit responds then fires onQuit", async () => {
+  it("exposes no endpoint that shuts the server down", async () => {
     const ctx = await start();
     const res = await fetch(`${ctx.base}/api/quit`, { method: "POST" });
-    expect(res.status).toBe(200);
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(ctx.quits).toBe(1);
+    expect(res.status).toBe(404);
+    const still = await fetch(`${ctx.base}/`);
+    expect(still.status).toBe(200);
   });
 });
 

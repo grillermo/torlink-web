@@ -35,7 +35,7 @@ describe("Footer", () => {
     window.addEventListener("keydown", (event) => keys.push(event.key));
     const view = render(
       <Footer hints={[
-        { keys: "q", label: "Quit" },
+        { keys: "o", label: "Folder" },
         { keys: "?", label: "Keys" },
         { keys: "↵", label: "Confirm" },
         { keys: "↑↓←→", label: "Move" },
@@ -45,9 +45,9 @@ describe("Footer", () => {
 
     const buttons = view.getAllByRole("button");
     expect(buttons.map((button) => button.textContent)).toEqual([
-      "q Quit", "? Keys", "↵ Confirm", "↑↓←→ Move", "tab Switch pane",
+      "o Folder", "? Keys", "↵ Confirm", "↑↓←→ Move", "tab Switch pane",
     ]);
     buttons.forEach((button) => fireEvent.click(button));
-    expect(keys).toEqual(["q", "?", "Enter", "ArrowDown", "Tab"]);
+    expect(keys).toEqual(["o", "?", "Enter", "ArrowDown", "Tab"]);
   });
 });

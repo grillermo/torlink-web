@@ -50,11 +50,7 @@ async function start(command: Extract<CliCommand, { kind: "run" }>): Promise<voi
   if (lifecycle.stopping) return;
 
   const webRoot = fileURLToPath(new URL("./web/", import.meta.url));
-  const server = createTorlinkServer({
-    core,
-    webRoot,
-    onQuit: () => lifecycle.terminate(0),
-  });
+  const server = createTorlinkServer({ core, webRoot });
   lifecycle.setServer(server);
   if (lifecycle.stopping) return;
 

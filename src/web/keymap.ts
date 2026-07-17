@@ -20,7 +20,6 @@ export const HELP_GROUPS: HelpGroup[] = [
       { keys: "esc", label: "Back" },
       { keys: "o", label: "Download folder" },
       { keys: "t", label: "Extra trackers" },
-      { keys: "q", label: "Quit" },
     ],
   },
   {
@@ -74,7 +73,6 @@ export function footerHints(
       { keys: "↵", label: "Open" },
       SWITCH,
       ALWAYS,
-      { keys: "q", label: "Quit" },
     ];
   }
   if (section === "seeding") {

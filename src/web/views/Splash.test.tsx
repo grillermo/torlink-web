@@ -16,7 +16,7 @@ function renderSplash() {
     section: "all", setSection: vi.fn(), region: "content", setRegion: vi.fn(),
     captureMode: "none", setCaptureMode: vi.fn(), downloadFocus: null, setDownloadFocus: vi.fn(),
     seedFocus: null, setSeedFocus: vi.fn(), startDownload: vi.fn(), cancelDownload: vi.fn(), toggleDownload: vi.fn(), retryFailed: vi.fn(), removeHistory: vi.fn(), clearHistory: vi.fn(), copyMagnet: vi.fn(),
-    showError: vi.fn(), notice: null, setNotice: vi.fn(), quitAll: vi.fn(),
+    showError: vi.fn(), notice: null, setNotice: vi.fn(),
   };
   return { ...render(<StoreContext.Provider value={store}><Splash /></StoreContext.Provider>), store };
 }
@@ -30,7 +30,7 @@ describe("Splash", () => {
     expect(view.getByText("A curated, local web app for torrent downloads.")).toBeTruthy();
     expect(view.getByText(/games.*·.*movies.*·.*tv.*·.*anime/i)).toBeTruthy();
     expect(view.getByPlaceholderText("Search or paste a magnet link…")).toBeTruthy();
-    expect(view.container.querySelector(".splash-footer")?.textContent).toMatch(/search.*empty.*browse.*quit/i);
+    expect(view.container.querySelector(".splash-footer")?.textContent).toMatch(/search.*empty.*browse/i);
   });
 
   it("submits both a query and empty browse input", () => {
@@ -44,29 +44,10 @@ describe("Splash", () => {
     expect(store.submitQuery).toHaveBeenNthCalledWith(2, "");
   });
 
-  it("keeps Escape and the plain c quit shortcut reachable from the native input", () => {
-    const { getByRole, store } = renderSplash();
-    const input = getByRole("textbox");
-    fireEvent.keyDown(input, { key: "Escape" });
-    fireEvent.keyDown(input, { key: "c" });
-    expect(store.quitAll).toHaveBeenCalledTimes(2);
-  });
-
-  it.each([
-    { ctrlKey: true },
-    { metaKey: true },
-    { altKey: true },
-  ])("leaves modified c shortcuts native", (init) => {
-    const { getByRole, store } = renderSplash();
-    const event = createEvent.keyDown(getByRole("textbox"), { key: "c", ...init });
+  it("leaves typing keys in the search input native", () => {
+    const { getByRole } = renderSplash();
+    const event = createEvent.keyDown(getByRole("textbox"), { key: "c" });
     fireEvent(getByRole("textbox"), event);
-    expect(store.quitAll).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
-  });
-
-  it("does not quit when SearchBar moves down", () => {
-    const { getByRole, store } = renderSplash();
-    fireEvent.keyDown(getByRole("textbox"), { key: "ArrowDown" });
-    expect(store.quitAll).not.toHaveBeenCalled();
   });
 });

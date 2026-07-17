@@ -28,7 +28,7 @@ const store: Store = {
   section: "all", setSection: () => {}, region: "content", setRegion: () => {},
   captureMode: "none", setCaptureMode: () => {}, downloadFocus: null, setDownloadFocus: () => {},
   seedFocus: null, setSeedFocus: () => {}, startDownload: () => {}, cancelDownload: () => {}, toggleDownload: () => {}, retryFailed: () => {}, removeHistory: () => {}, clearHistory: () => {}, copyMagnet: () => {},
-  showError: () => {}, notice: null, setNotice: () => {}, quitAll: () => {},
+  showError: () => {}, notice: null, setNotice: () => {},
 };
 
 function WithStore({ children }: { children: ReactNode }) {

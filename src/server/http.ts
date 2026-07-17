@@ -26,7 +26,6 @@ class PayloadTooLargeError extends Error {}
 export interface TorlinkServerOptions {
   core: Core;
   webRoot: string;
-  onQuit: () => void;
 }
 
 interface DownloadInput {
@@ -316,12 +315,6 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
         ? await opts.core.useFolder(body.dir)
         : opts.core.removeFolder(body.dir);
       sendJson(res, result.ok ? 200 : 400, result);
-      return;
-    }
-
-    if (req.method === "POST" && pathname === "/api/quit") {
-      res.once("finish", opts.onQuit);
-      sendJson(res, 200, { ok: true });
       return;
     }
 

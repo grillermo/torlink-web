@@ -504,8 +504,7 @@ body {
   border-top: var(--rule-thin) solid var(--color-rule);
 }
 
-.splash,
-.stopped {
+.splash {
   display: grid;
   /* An auto track sizes to the item's max-content, which makes the item's own
      max-width:100% circular. Pin the track to the container instead. */

@@ -46,7 +46,6 @@ export interface Store {
   copyMagnet(input: { name: string; magnet: string }): void;
   showError(item: QueueItem): void;
   notice: string | null; setNotice(s: string | null): void;
-  quitAll(): void;
 }
 
 export const StoreContext = createContext<Store | null>(null);

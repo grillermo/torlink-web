@@ -14,12 +14,12 @@ describe("post", () => {
     }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(post("/api/quit", { now: true })).resolves.toEqual({
+    await expect(post("/api/config/trackers", { now: true })).resolves.toEqual({
       ok: false,
       error: "nope",
       notice: undefined,
     });
-    expect(fetchMock).toHaveBeenCalledWith("/api/quit", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/config/trackers", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ now: true }),
@@ -29,7 +29,7 @@ describe("post", () => {
   it("returns the unreachable error when posting fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
 
-    await expect(post("/api/quit")).resolves.toEqual({
+    await expect(post("/api/config/trackers")).resolves.toEqual({
       ok: false,
       error: "torlink server unreachable",
     });

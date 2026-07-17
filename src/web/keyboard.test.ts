@@ -17,7 +17,7 @@ function deps(over: Partial<KeyDeps> = {}): KeyDeps {
     openTrackers: vi.fn(),
     openThrottle: vi.fn(),
     pasteMagnet: vi.fn(),
-    quitAll: vi.fn(),
+   
     ...over,
   };
 }
@@ -51,12 +51,10 @@ describe("handleGlobalKey", () => {
     expect(open.setShowHelp).toHaveBeenCalledWith(false);
   });
 
-  it("tab toggles region and q quits", () => {
+  it("tab toggles region", () => {
     const d = deps({ region: "sidebar" });
     handleGlobalKey(key("Tab"), d);
     expect(d.setRegion).toHaveBeenCalledWith("content");
-    handleGlobalKey(key("q"), d);
-    expect(d.quitAll).toHaveBeenCalled();
   });
 
   it("escape walks content -> sidebar -> splash", () => {
@@ -70,29 +68,29 @@ describe("handleGlobalKey", () => {
 
   it("ignores keys typed into an input", () => {
     const d = deps();
-    handleGlobalKey(key("q", { tagName: "INPUT" }), d);
-    expect(d.quitAll).not.toHaveBeenCalled();
+    handleGlobalKey(key("o", { tagName: "INPUT" }), d);
+    expect(d.openFolder).not.toHaveBeenCalled();
   });
 
   it("ignores textarea and composing input", () => {
     const textarea = deps();
-    handleGlobalKey(key("q", { tagName: "TEXTAREA" }), textarea);
-    expect(textarea.quitAll).not.toHaveBeenCalled();
+    handleGlobalKey(key("o", { tagName: "TEXTAREA" }), textarea);
+    expect(textarea.openFolder).not.toHaveBeenCalled();
 
     const composing = deps();
-    const event = key("q");
+    const event = key("o");
     Object.defineProperty(event, "isComposing", { value: true });
     handleGlobalKey(event, composing);
-    expect(composing.quitAll).not.toHaveBeenCalled();
+    expect(composing.openFolder).not.toHaveBeenCalled();
   });
 
   it("lets an open prompt own all input", () => {
     const d = deps({ editingPrompt: true, errorItem: {}, showHelp: true });
-    const event = key("q");
+    const event = key("o");
     handleGlobalKey(event, d);
     expect(d.clearErrorItem).not.toHaveBeenCalled();
     expect(d.setShowHelp).not.toHaveBeenCalled();
-    expect(d.quitAll).not.toHaveBeenCalled();
+    expect(d.openFolder).not.toHaveBeenCalled();
     expect(event.defaultPrevented).toBe(false);
   });
 
@@ -101,14 +99,6 @@ describe("handleGlobalKey", () => {
     handleGlobalKey(key("x"), d);
     expect(d.clearErrorItem).toHaveBeenCalledOnce();
     expect(d.setShowHelp).not.toHaveBeenCalled();
-  });
-
-  it("leaves Ctrl+C to the browser", () => {
-    const d = deps();
-    const event = key("c", undefined, { ctrlKey: true });
-    handleGlobalKey(event, d);
-    expect(d.quitAll).not.toHaveBeenCalled();
-    expect(event.defaultPrevented).toBe(false);
   });
 
   it.each([

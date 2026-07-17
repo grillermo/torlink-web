@@ -14,7 +14,6 @@ export interface KeyDeps {
   openTrackers(): void;
   openThrottle(direction: "download" | "upload"): void;
   pasteMagnet(): void;
-  quitAll(): void;
 }
 
 export function isPlainShortcut(event: KeyboardEvent): boolean {
@@ -87,10 +86,5 @@ export function handleGlobalKey(e: KeyboardEvent, deps: KeyDeps): void {
     if (deps.captureMode === "esc") return;
     if (deps.region === "content") deps.setRegion("sidebar");
     else deps.setView("splash");
-    return;
-  }
-  if (e.key === "q") {
-    e.preventDefault();
-    deps.quitAll();
   }
 }

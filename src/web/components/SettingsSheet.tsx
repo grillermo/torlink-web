@@ -24,7 +24,7 @@ export function SettingsSheet({
   onCancel(): void;
   onSelect(target: SettingsTarget): void;
 }) {
-  const { config, quitAll } = useStore();
+  const { config } = useStore();
   const entries: Entry[] = [
     { key: "folder", label: "Download folder", value: config.downloadDir },
     { key: "trackers", label: "Trackers", value: `${config.trackers.length} configured` },
@@ -50,7 +50,6 @@ export function SettingsSheet({
       </div>
       <div className="settings-actions">
         <button className="ghost-button" onClick={onCancel} type="button">Close</button>
-        <button className="ghost-button bad" onClick={quitAll} type="button">Quit torlink</button>
       </div>
     </section>
   );

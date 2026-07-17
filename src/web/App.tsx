@@ -59,7 +59,6 @@ export function App({ children }: { children?: ReactNode } = {}) {
     sequence: 0,
   });
   const [errorItem, setErrorItem] = useState<QueueItem | null>(null);
-  const [stopped, setStopped] = useState(false);
 
   const reserveNotice = useCallback((): number => {
     noticeSequence.current += 1;
@@ -213,17 +212,6 @@ export function App({ children }: { children?: ReactNode } = {}) {
     void runAction("/api/config/throttle", { direction, value });
   }, [runAction]);
 
-  const quitAll = useCallback(() => {
-    const sequence = reserveNotice();
-    void post("/api/quit").then((result) => {
-      if (result.ok) {
-        setStopped(true);
-        return;
-      }
-      publishReservedNotice(sequence, responseNotice(result));
-    });
-  }, [publishReservedNotice, reserveNotice]);
-
   useEffect(() => {
     if (!state || view !== "browser") return;
     const onKeyDown = (event: KeyboardEvent): void => handleGlobalKey(event, {
@@ -240,11 +228,10 @@ export function App({ children }: { children?: ReactNode } = {}) {
       openTrackers: () => setPrompt("trackers"),
       openThrottle: setPrompt,
       pasteMagnet: () => { void pasteFromClipboard(); },
-      quitAll,
     });
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [captureMode, errorItem, pasteFromClipboard, prompt, quitAll, region, settingsOpen, showHelp, state, view]);
+  }, [captureMode, errorItem, pasteFromClipboard, prompt, region, settingsOpen, showHelp, state, view]);
 
   const store = useMemo<Store | null>(() => state ? {
     config: state.config,
@@ -274,10 +261,9 @@ export function App({ children }: { children?: ReactNode } = {}) {
     showError: setErrorItem,
     notice: noticeState.text,
     setNotice,
-    quitAll,
   } : null, [
     cancelDownload, captureMode, clearHistory, copyMagnet, downloadFocus, errorItem, noticeState.text,
-    prompt, query, quitAll, region, removeHistory, retryFailed, section, seedFocus, settingsOpen,
+    prompt, query, region, removeHistory, retryFailed, section, seedFocus, settingsOpen,
     showHelp, startDownload, state, submitQuery, toggleDownload, toggleSeed, view,
   ]);
 
@@ -285,10 +271,6 @@ export function App({ children }: { children?: ReactNode } = {}) {
     setSettingsOpen(false);
     setPrompt(target);
   }, []);
-
-  if (stopped) {
-    return <main className="stopped">torlink stopped — you can close this tab.</main>;
-  }
 
   if (!state || !store) {
     return <main className="splash" aria-live="polite">Starting torlink…</main>;

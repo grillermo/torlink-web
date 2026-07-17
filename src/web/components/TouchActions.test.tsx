@@ -48,7 +48,7 @@ function storeFor(overrides: Partial<Store> = {}): Store {
     captureMode: "none", setCaptureMode: vi.fn(), downloadFocus: null, setDownloadFocus: vi.fn(),
     seedFocus: null, setSeedFocus: vi.fn(), startDownload: vi.fn(), cancelDownload: vi.fn(),
     toggleDownload: vi.fn(), retryFailed: vi.fn(), removeHistory: vi.fn(), clearHistory: vi.fn(),
-    toggleSeed: vi.fn(), copyMagnet: vi.fn(), showError: vi.fn(), notice: null, setNotice: vi.fn(), quitAll: vi.fn(),
+    toggleSeed: vi.fn(), copyMagnet: vi.fn(), showError: vi.fn(), notice: null, setNotice: vi.fn(),
     ...overrides,
   };
 }

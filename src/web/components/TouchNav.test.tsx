@@ -27,7 +27,7 @@ function storeFor(overrides: Partial<Store> = {}): Store {
     captureMode: "none", setCaptureMode: vi.fn(), downloadFocus: null, setDownloadFocus: vi.fn(),
     seedFocus: null, setSeedFocus: vi.fn(), startDownload: vi.fn(), cancelDownload: vi.fn(),
     toggleDownload: vi.fn(), retryFailed: vi.fn(), removeHistory: vi.fn(), clearHistory: vi.fn(),
-    copyMagnet: vi.fn(), showError: vi.fn(), notice: null, setNotice: vi.fn(), quitAll: vi.fn(),
+    copyMagnet: vi.fn(), showError: vi.fn(), notice: null, setNotice: vi.fn(),
     ...overrides,
   };
 }
@@ -123,9 +123,8 @@ describe("SettingsSheet", () => {
   });
 
   it("closes without touching the config", () => {
-    const { getByRole, onCancel, store } = renderSheet();
+    const { getByRole, onCancel } = renderSheet();
     fireEvent.click(getByRole("button", { name: "Close" }));
     expect(onCancel).toHaveBeenCalled();
-    expect(store.quitAll).not.toHaveBeenCalled();
   });
 });

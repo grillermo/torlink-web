@@ -300,33 +300,12 @@ describe("App actions", () => {
 
     fireEvent.keyDown(window, { key: "?" });
     expect(view.container.querySelector('[data-overlay="help"]')).toBeTruthy();
-    fireEvent.keyDown(window, { key: "q" });
+    fireEvent.keyDown(window, { key: "x" });
     expect(view.container.querySelector("[data-overlay]")).toBeNull();
-    expect(mocks.post).not.toHaveBeenCalledWith("/api/quit");
 
     fireEvent.keyDown(window, { key: "o" });
     expect(view.container.querySelector('[data-overlay="folder"]')).toBeTruthy();
-    fireEvent.keyDown(window, { key: "q" });
+    fireEvent.keyDown(window, { key: "t" });
     expect(view.container.querySelector('[data-overlay="folder"]')).toBeTruthy();
-    expect(mocks.post).not.toHaveBeenCalledWith("/api/quit");
-  });
-
-  it("renders the stopped screen only after a successful quit", async () => {
-    mocks.post.mockResolvedValueOnce({ ok: true });
-    const view = hydrate();
-    await act(async () => currentStore!.quitAll());
-    expect(mocks.post).toHaveBeenCalledWith("/api/quit");
-    expect(view.getByText("torlink stopped — you can close this tab.")).toBeTruthy();
-  });
-
-  it("keeps the app rendered and reports a failed quit", async () => {
-    mocks.post.mockResolvedValueOnce({ ok: false, error: "still running" });
-    const view = hydrate();
-    openBrowser();
-    await act(async () => currentStore!.quitAll());
-
-    expect(view.queryByText("torlink stopped — you can close this tab.")).toBeNull();
-    expect(view.container.querySelector('[data-view="browser"]')).toBeTruthy();
-    expect(view.getByRole("status").textContent).toBe("still running");
   });
 });
