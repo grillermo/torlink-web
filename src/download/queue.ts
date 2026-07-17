@@ -49,6 +49,7 @@ export interface AddInput {
   magnet: string;
   source?: SourceId;
   sizeBytes?: number;
+  seeders?: number;
 }
 
 export class DownloadQueue extends EventEmitter {
@@ -112,6 +113,7 @@ export class DownloadQueue extends EventEmitter {
           downloadedBytes: 0,
           speed: 0,
           peers: 0,
+          seeders: input.seeders,
           addedAt: Date.now(),
         };
     this.items.set(item.id, item);
@@ -486,6 +488,7 @@ export class DownloadQueue extends EventEmitter {
       id: it.id,
       name: it.name,
       source: it.source,
+      seeders: it.seeders,
       sizeBytes: it.totalBytes,
       magnet: it.magnet,
       dir: it.dir,

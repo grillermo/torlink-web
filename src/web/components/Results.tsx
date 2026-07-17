@@ -119,7 +119,7 @@ export function Results() {
       else if (event.key === "PageUp") { event.preventDefault(); setCursor(Math.max(0, clamped - 8)); }
       else if (event.key === "PageDown") { event.preventDefault(); setCursor(Math.min(results.length - 1, clamped + 8)); }
       else if (event.key === "Enter") { event.preventDefault(); const result = results[clamped]; if (result) { setDetail(result); setMode("detail"); } }
-      else if (event.key === "d") { const result = results[clamped]; if (result) startDownload({ id: result.infoHash, name: result.name, magnet: result.magnet, source: result.source, sizeBytes: result.sizeBytes }); }
+      else if (event.key === "d") { const result = results[clamped]; if (result) startDownload({ id: result.infoHash, name: result.name, magnet: result.magnet, source: result.source, sizeBytes: result.sizeBytes, seeders: result.seeders }); }
       else if (event.key === "y") { const result = results[clamped]; if (result) copyMagnet({ name: result.name, magnet: result.magnet }); }
       else if (event.key === "s") { event.preventDefault(); setSort((current) => nextSort(current)); }
     };
@@ -130,7 +130,7 @@ export function Results() {
     if (!focused || mode !== "detail") return;
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape") { event.preventDefault(); setMode("list"); setDetail(null); }
-      else if (event.key === "d" && detail) startDownload({ id: detail.infoHash, name: detail.name, magnet: detail.magnet, source: detail.source, sizeBytes: detail.sizeBytes });
+      else if (event.key === "d" && detail) startDownload({ id: detail.infoHash, name: detail.name, magnet: detail.magnet, source: detail.source, sizeBytes: detail.sizeBytes, seeders: detail.seeders });
       else if (event.key === "y" && detail) copyMagnet({ name: detail.name, magnet: detail.magnet });
     };
     window.addEventListener("keydown", onKeyDown);
@@ -164,7 +164,7 @@ export function Results() {
   );
   const openDetail = (result: TorrentResult): void => { setDetail(result); setMode("detail"); };
   const closeDetail = (): void => { setMode("list"); setDetail(null); };
-  const download = (result: TorrentResult): void => startDownload({ id: result.infoHash, name: result.name, magnet: result.magnet, source: result.source, sizeBytes: result.sizeBytes });
+  const download = (result: TorrentResult): void => startDownload({ id: result.infoHash, name: result.name, magnet: result.magnet, source: result.source, sizeBytes: result.sizeBytes, seeders: result.seeders });
 
   return <div className="col results-view">
     <SearchBar width={WIDTH} value={query} editing={mode === "search"} placeholder={PLACEHOLDER} onSubmit={(value) => { setMode("list"); submitQuery(value); }} onExitDown={() => setMode("list")} onExitLeft={() => setRegion("sidebar")} />

@@ -35,6 +35,7 @@ interface DownloadInput {
   magnet?: unknown;
   source?: unknown;
   sizeBytes?: unknown;
+  seeders?: unknown;
 }
 
 interface ValidDownloadInput extends DownloadInput {
@@ -193,6 +194,7 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
         magnet: body.magnet,
         source: typeof body.source === "string" ? body.source as SourceId : undefined,
         sizeBytes: typeof body.sizeBytes === "number" ? body.sizeBytes : undefined,
+        seeders: typeof body.seeders === "number" ? body.seeders : undefined,
       });
       sendJson(res, result.ok ? 200 : 400, result);
       return;

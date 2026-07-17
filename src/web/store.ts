@@ -36,7 +36,7 @@ export interface Store {
   captureMode: CaptureMode; setCaptureMode(m: CaptureMode): void;
   downloadFocus: DownloadFocus | null; setDownloadFocus(f: DownloadFocus | null): void;
   seedFocus: SeedFocus | null; setSeedFocus(f: SeedFocus | null): void;
-  startDownload(input: { id: string; name: string; magnet: string; source?: SourceId; sizeBytes?: number }): void;
+  startDownload(input: { id: string; name: string; magnet: string; source?: SourceId; sizeBytes?: number; seeders?: number }): void;
   cancelDownload(id: string): void;
   toggleDownload(id: string, action: "pause" | "resume"): void;
   retryFailed(): void;

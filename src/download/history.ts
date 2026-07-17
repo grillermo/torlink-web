@@ -10,6 +10,7 @@ export interface HistoryItem {
   id: string;
   name: string;
   source?: SourceId;
+  seeders?: number;
   sizeBytes: number;
   magnet: string;
   dir: string;

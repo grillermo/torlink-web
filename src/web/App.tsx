@@ -103,6 +103,7 @@ export function App({ children }: { children?: ReactNode } = {}) {
     magnet: string;
     source?: SourceId;
     sizeBytes?: number;
+    seeders?: number;
   }) => {
     void runAction("/api/downloads", input);
     setSection("downloads");

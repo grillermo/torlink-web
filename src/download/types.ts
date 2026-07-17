@@ -29,6 +29,7 @@ export interface QueueItem {
   downloadedBytes: number;
   speed: number;
   peers: number;
+  seeders?: number;
   eta?: number;
   files?: number;
   error?: string;

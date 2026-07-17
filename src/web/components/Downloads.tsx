@@ -12,20 +12,9 @@ import { RowActions, type RowAction } from "./RowActions";
 
 const WIDTH = 80;
 
-function sourceStyle(source: QueueItem["source"]): { tag: string; tone: string } {
-  switch (source) {
-    case "fitgirl": return { tag: "FG", tone: "accent" };
-    case "yts": return { tag: "YTS", tone: "good" };
-    case "eztv": return { tag: "EZTV", tone: "warn" };
-    case "nyaa": return { tag: "NYAA", tone: "bright" };
-    case "subsplease": return { tag: "SUB", tone: "alt" };
-    case "solid": return { tag: "SLD", tone: "source-solid" };
-    case "tpb-movies":
-    case "tpb-tv": return { tag: "TPB", tone: "source-tpb" };
-    case "x1337-movies":
-    case "x1337-tv": return { tag: "1337", tone: "source-1337x" };
-    default: return { tag: "mag", tone: "dim" };
-  }
+function seedCount(seeders: number | undefined): { text: string; tone: string } {
+  if (typeof seeders !== "number") return { text: "-", tone: "dim" };
+  return { text: String(seeders), tone: seeders > 0 ? "good" : "dim" };
 }
 
 function statusIcon(status: QueueItem["status"]): string {
@@ -90,7 +79,7 @@ export function Downloads() {
         else if (event.key === "p") toggleDownload(activeItem.id, activeItem.status === "paused" ? "resume" : "pause");
         else if (event.key === "Enter" && activeItem.status === "failed") { event.preventDefault(); showError(activeItem); }
       } else if (recentItem) {
-        if (event.key === "Enter" || event.key === "d") startDownload({ id: recentItem.id, name: recentItem.name, magnet: recentItem.magnet, source: recentItem.source, sizeBytes: recentItem.sizeBytes });
+        if (event.key === "Enter" || event.key === "d") startDownload({ id: recentItem.id, name: recentItem.name, magnet: recentItem.magnet, source: recentItem.source, sizeBytes: recentItem.sizeBytes, seeders: recentItem.seeders });
         else if (event.key === "c") removeHistory(recentItem.id);
       }
     };
@@ -103,7 +92,7 @@ export function Downloads() {
     if (item.status === "failed") showError(item);
   };
   const enterRecent = (item: HistoryItem): void => {
-    startDownload({ id: item.id, name: item.name, magnet: item.magnet, source: item.source, sizeBytes: item.sizeBytes });
+    startDownload({ id: item.id, name: item.name, magnet: item.magnet, source: item.source, sizeBytes: item.sizeBytes, seeders: item.seeders });
   };
   const activeActions = (item: QueueItem): RowAction[] => item.status === "failed"
     ? [
@@ -147,17 +136,17 @@ export function Downloads() {
 }
 
 function ActiveRow({ item, selected, focused, rowRef, onSelect, onEnter }: { item: QueueItem; selected: boolean; focused: boolean; rowRef?: RefObject<HTMLButtonElement | null>; onSelect(): void; onEnter(item: QueueItem): void }) {
-  const source = sourceStyle(item.source);
+  const seeds = seedCount(item.seeders);
   const tone = item.status === "failed" ? "bad" : item.status === "paused" ? "dim" : "accent";
   return <button ref={rowRef} className={`download-row ${selected && focused ? "selected" : ""} ${item.status === "paused" ? "download-paused" : ""}`} aria-selected={selected} onClick={onSelect} onDoubleClick={() => onEnter(item)} type="button">
-    <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className={tone}>{statusIcon(item.status)}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(item.name)}</span><span className="dim">{item.totalBytes > 0 ? formatBytes(item.totalBytes) : "-"}</span><span className={selected && focused ? source.tone : `dim ${source.tone}`}>{source.tag}</span>
+    <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className={tone}>{statusIcon(item.status)}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(item.name)}</span><span className="dim">{item.totalBytes > 0 ? formatBytes(item.totalBytes) : "-"}</span><span className={seeds.tone}>{seeds.text}</span>
     <span className="download-progress"><ProgressBar pct={item.progress} width={24} animate={item.status === "downloading"} /></span><span className="dim trunc">{rightStats(item)}</span>
   </button>;
 }
 
 function RecentRow({ item, selected, focused, rowRef, onSelect, onEnter }: { item: HistoryItem; selected: boolean; focused: boolean; rowRef?: RefObject<HTMLButtonElement | null>; onSelect(): void; onEnter(item: HistoryItem): void }) {
-  const source = sourceStyle(item.source);
+  const seeds = seedCount(item.seeders);
   return <button ref={rowRef} className={`download-row download-recent-row ${selected && focused ? "selected" : ""}`} aria-selected={selected} onClick={onSelect} onDoubleClick={() => onEnter(item)} type="button">
-    <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className="good">{ICON.done}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(item.name)}</span><span className="dim">{item.sizeBytes > 0 ? formatBytes(item.sizeBytes) : "-"}</span><span className="dim">{formatRelative(item.completedAt / 1000) || "-"}</span><span className={selected && focused ? source.tone : `dim ${source.tone}`}>{source.tag}</span>
+    <span className="accent">{selected && focused ? ICON.pointer : ""}</span><span className="good">{ICON.done}</span><span className={`trunc ${selected && focused ? "accent b" : "dim"}`}>{cleanText(item.name)}</span><span className="dim">{item.sizeBytes > 0 ? formatBytes(item.sizeBytes) : "-"}</span><span className="dim">{formatRelative(item.completedAt / 1000) || "-"}</span><span className={seeds.tone}>{seeds.text}</span>
   </button>;
 }
