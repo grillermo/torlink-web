@@ -65,10 +65,23 @@ export function App({ children }: { children?: ReactNode } = {}) {
     sequence: 0,
   });
   const [errorItem, setErrorItem] = useState<QueueItem | null>(null);
+  const bootRedirectDone = useRef(false);
 
   useEffect(() => {
     if (route.redirect) navigate("/", { replace: true });
   }, [navigate, route.redirect]);
+
+  useEffect(() => {
+    if (bootRedirectDone.current || !state) return;
+    bootRedirectDone.current = true;
+    const last = state.config.lastRoute ?? "";
+    if (location.pathname !== "/" || !last) return;
+    const url = new URL(last, "http://x");
+    const target = parseRoute(url.pathname, url.search);
+    if (target.view === "browser" && !target.redirect) {
+      navigate(last, { replace: true });
+    }
+  }, [state, location.pathname, navigate]);
 
   useEffect(() => {
     if (view !== "browser") return;

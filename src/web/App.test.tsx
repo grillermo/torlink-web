@@ -382,4 +382,30 @@ describe("App URL state", () => {
     expect(currentStore?.query).toBe("dune");
     expect(view.container.querySelector('[data-view="browser"]')).toBeTruthy();
   });
+
+  it("redirects a fresh boot at / to the stored route", () => {
+    const state = { ...baseState, config: { ...baseState.config, lastRoute: "/all?q=dune" } };
+    const view = hydrate(state, "/");
+    expect(currentPath(view)).toBe("/all?q=dune");
+    expect(currentStore?.query).toBe("dune");
+  });
+
+  it("stays on splash when there is no stored route", () => {
+    const state = { ...baseState, config: { ...baseState.config, lastRoute: "" } };
+    const view = hydrate(state, "/");
+    expect(currentPath(view)).toBe("/");
+    expect(view.container.querySelector('[data-view="splash"]')).toBeTruthy();
+  });
+
+  it("does not redirect when the boot path is not /", () => {
+    const state = { ...baseState, config: { ...baseState.config, lastRoute: "/seeding" } };
+    const view = hydrate(state, "/downloads");
+    expect(currentPath(view)).toBe("/downloads");
+  });
+
+  it("ignores an invalid stored route and stays on splash", () => {
+    const state = { ...baseState, config: { ...baseState.config, lastRoute: "/bogus/segment/here" } };
+    const view = hydrate(state, "/");
+    expect(currentPath(view)).toBe("/");
+  });
 });
