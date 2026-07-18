@@ -247,13 +247,13 @@ describe("App actions", () => {
   });
 
   it("keeps the folder prompt and selected cursor after refused removal", async () => {
-    mocks.post.mockResolvedValueOnce({ ok: false, notice: "Can't remove the active folder." });
     const state = {
       ...baseState,
       config: { ...baseState.config, downloadDirs: ["/downloads", "/other"] },
     };
     const view = hydrate(state);
     openBrowser();
+    mocks.post.mockResolvedValueOnce({ ok: false, notice: "Can't remove the active folder." });
 
     fireEvent.keyDown(window, { key: "o" });
     expect(view.container.querySelector('[data-overlay="folder"]')).toBeTruthy();
@@ -345,6 +345,14 @@ describe("App URL state", () => {
     act(() => currentStore!.setSection("seeding"));
     expect(currentPath(view)).toBe("/seeding?q=ubuntu");
     expect(view.container.querySelector('[data-section="seeding"]')).toBeTruthy();
+  });
+
+  it("reports the browser route to the server on navigation", () => {
+    hydrate();
+    openBrowser();
+    expect(mocks.post).toHaveBeenCalledWith("/api/last-route", { path: "/all?q=ubuntu" });
+    act(() => currentStore!.setSection("seeding"));
+    expect(mocks.post).toHaveBeenCalledWith("/api/last-route", { path: "/seeding?q=ubuntu" });
   });
 
   it("tracks the settings sheet in the URL", () => {

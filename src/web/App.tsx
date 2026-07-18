@@ -70,6 +70,11 @@ export function App({ children }: { children?: ReactNode } = {}) {
     if (route.redirect) navigate("/", { replace: true });
   }, [navigate, route.redirect]);
 
+  useEffect(() => {
+    if (view !== "browser") return;
+    void post("/api/last-route", { path: sectionPath(section, query) });
+  }, [view, section, query]);
+
   const go = useCallback((to: string): void => {
     if (to !== `${location.pathname}${location.search}`) navigate(to);
   }, [location.pathname, location.search, navigate]);
