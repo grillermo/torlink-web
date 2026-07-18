@@ -505,4 +505,21 @@ describe("action routes", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: "unknown id" });
   });
+
+  it("last-route stores a valid path and rejects a bad one", async () => {
+    const { base, core } = await start();
+    const ok = await fetch(`${base}/api/last-route`, {
+      method: "POST",
+      body: JSON.stringify({ path: "/all?q=ubuntu" }),
+    });
+    expect(ok.status).toBe(200);
+    expect(core.config.lastRoute).toBe("/all?q=ubuntu");
+
+    const bad = await fetch(`${base}/api/last-route`, {
+      method: "POST",
+      body: JSON.stringify({ path: "http://evil/x" }),
+    });
+    expect(bad.status).toBe(400);
+    expect(core.config.lastRoute).toBe("/all?q=ubuntu");
+  });
 });

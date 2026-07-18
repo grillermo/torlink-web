@@ -109,6 +109,11 @@ export class Core extends EventEmitter {
     return { ok: true, notice: `Removed: ${truncate(dir, 48)}` };
   }
 
+  setLastRoute(path: string): void {
+    this.config = { ...this.config, lastRoute: path };
+    void saveConfig(this.config);
+  }
+
   suspend(): void {
     this.queue.suspend();
   }

@@ -328,6 +328,26 @@ export function createTorlinkServer(opts: TorlinkServerOptions): Server {
       return;
     }
 
+    if (req.method === "POST" && pathname === "/api/last-route") {
+      let body: unknown;
+      try {
+        body = await readJson(req);
+      } catch (error) {
+        if (error instanceof PayloadTooLargeError) {
+          sendJson(res, 413, { error: "payload too large" });
+          return;
+        }
+        throw error;
+      }
+      if (!isRecord(body) || typeof body.path !== "string" || !body.path.startsWith("/")) {
+        sendJson(res, 400, { error: "invalid input" });
+        return;
+      }
+      opts.core.setLastRoute(body.path);
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
     if (req.method === "GET" && pathname === "/api/events") {
       let timer: ReturnType<typeof setTimeout> | null = null;
       let closed = false;
