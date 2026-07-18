@@ -1,6 +1,6 @@
 ## About this fork
 
-* Forked from commit 7748c41cf79968029890f273322ca35d3280be36
+* Forked from commit f3880f15fed90c989564abdd12e78136c96d3994
 * Web server + frontend
 * Mobile friendly
 * UI button driven (keyboard hotkeys available)
