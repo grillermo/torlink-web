@@ -9,6 +9,7 @@ export interface Config {
   trackers: string[];
   maxDownloadKbps: number; // 0 = unlimited
   maxUploadKbps: number; // 0 = unlimited
+  lastRoute?: string; // last visited browser path, e.g. "/all?q=ubuntu"
 }
 
 export const defaultConfig: Config = {
@@ -17,6 +18,7 @@ export const defaultConfig: Config = {
   trackers: [],
   maxDownloadKbps: 0,
   maxUploadKbps: 0,
+  lastRoute: "",
 };
 
 // A throttle rate in whole KB/s: a non-negative integer, where 0 means
@@ -44,6 +46,13 @@ export function normalizeDirList(active: string, dirs: unknown): string[] {
   return out;
 }
 
+// The remembered last route, kept only when it is a client path (a string
+// starting with "/"). Anything else — non-string, or an absolute URL that
+// could point off-app — collapses to "" so the client falls back to splash.
+export function sanitizeLastRoute(value: unknown): string {
+  return typeof value === "string" && value.startsWith("/") ? value : "";
+}
+
 export async function loadConfig(): Promise<Config> {
   let raw: string;
   try {
@@ -64,6 +73,7 @@ export async function loadConfig(): Promise<Config> {
       : [];
     cfg.maxDownloadKbps = sanitizeKbps(cfg.maxDownloadKbps);
     cfg.maxUploadKbps = sanitizeKbps(cfg.maxUploadKbps);
+    cfg.lastRoute = sanitizeLastRoute(cfg.lastRoute);
     return cfg;
   } catch {
     return { ...defaultConfig };
